@@ -124,6 +124,7 @@ function PathNode({ node, filter }) {
 }
 
 function EmployeeTab() {
+  const { competencies } = useApp()
   const [filter, setFilter] = useState('All')
   const GOALS = [
     { done: true,  text: 'Complete UX Research course',     meta: 'Completed · Mar 1' },
@@ -283,6 +284,33 @@ function EmployeeTab() {
             ))}
           </div>
         </div>
+
+        {/* Competencias */}
+        {competencies.length > 0 && (
+          <div className="bg-white rounded-2xl shadow-4dp">
+            <div className="px-6 py-4 border-b border-n-100">
+              <p className="text-[13px] font-semibold text-n-950">Competencias</p>
+              <p className="text-[11px] text-n-600">Marco de competencias de tu área</p>
+            </div>
+            <div className="p-5 flex flex-col gap-4">
+              {competencies.map(comp => (
+                <div key={comp.id}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-h-50 text-h-700 border border-h-100">{comp.category}</span>
+                    <p className="text-[13px] font-semibold text-n-950">{comp.name}</p>
+                  </div>
+                  {comp.skills.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 pl-1">
+                      {comp.skills.map(sk => (
+                        <span key={sk.id} className="text-[11px] bg-n-50 text-n-700 px-2.5 py-1 rounded-lg border border-n-100">{sk.name}</span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
