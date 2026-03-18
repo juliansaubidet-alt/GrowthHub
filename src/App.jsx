@@ -63,6 +63,69 @@ const defaultActionItems = [
   { id: 4, skill: 'Negociación', type: 'libro',     title: 'Libro: Never Split the Difference — Chris Voss', url: '', week: 3, done: false, milestone: true },
 ]
 
+const defaultCompetencies = [
+  {
+    id: 1, category: 'Técnico', name: 'Diseño Visual',
+    description: 'Habilidades de diseño y comunicación visual',
+    skills: [
+      { id: 11, name: 'Figma',           description: 'Herramienta principal de diseño UI/UX' },
+      { id: 12, name: 'Prototyping',     description: 'Creación de prototipos interactivos' },
+      { id: 13, name: 'Design Systems',  description: 'Sistemas de diseño escalables y consistentes' },
+    ],
+  },
+  {
+    id: 2, category: 'Liderazgo', name: 'Gestión de Stakeholders',
+    description: 'Comunicación y alineación con stakeholders',
+    skills: [
+      { id: 21, name: 'Presentaciones', description: 'Presentar diseños y decisiones a stakeholders' },
+      { id: 22, name: 'Negociación',    description: 'Negociar alcance, prioridades y recursos' },
+    ],
+  },
+  {
+    id: 3, category: 'Soft Skills', name: 'Colaboración',
+    description: 'Trabajo en equipo y comunicación efectiva',
+    skills: [
+      { id: 31, name: 'Feedback',  description: 'Dar y recibir feedback constructivo' },
+      { id: 32, name: 'Mentoring', description: 'Mentoría y desarrollo de compañeros' },
+    ],
+  },
+]
+
+const defaultLevelObjectives = [
+  {
+    level: 'L1', title: 'Junior', color: '#c5d4f8', role: '',
+    objectives: [
+      { id: 101, area: 'Técnico',       text: 'Completar tareas asignadas con supervisión mínima' },
+      { id: 102, area: 'Colaboración',  text: 'Participar activamente en reviews de diseño/código' },
+      { id: 103, area: 'Aprendizaje',   text: 'Completar al menos 2 cursos de skill técnica por trimestre' },
+    ],
+  },
+  {
+    level: 'L2', title: 'Mid', color: '#496be3', role: '',
+    objectives: [
+      { id: 201, area: 'Técnico',       text: 'Liderar features end-to-end de mediana complejidad' },
+      { id: 202, area: 'Colaboración',  text: 'Mentoría activa de al menos 1 persona junior' },
+      { id: 203, area: 'Visibilidad',   text: 'Presentar trabajo al equipo ampliado trimestralmente' },
+    ],
+  },
+  {
+    level: 'L3', title: 'Senior', color: '#3851d8', role: '',
+    objectives: [
+      { id: 301, area: 'Técnico',       text: 'Definir estándares y mejores prácticas para el equipo' },
+      { id: 302, area: 'Liderazgo',     text: 'Liderar proyectos cross-funcionales con autonomía' },
+      { id: 303, area: 'Estrategia',    text: 'Contribuir a la roadmap y visión del área' },
+    ],
+  },
+  {
+    level: 'L4', title: 'Lead', color: '#29317f', role: '',
+    objectives: [
+      { id: 401, area: 'Liderazgo',     text: 'Gestionar y desarrollar un equipo de 3+ personas' },
+      { id: 402, area: 'Estrategia',    text: 'Definir visión técnica/de diseño a 12+ meses' },
+      { id: 403, area: 'Impacto',       text: 'Impactar métricas clave de negocio medibles' },
+    ],
+  },
+]
+
 const defaultCatalog = [
   { id: 1, title: 'Desarrollo Web Full Stack', skill: 'React', type: 'curso', url: 'https://www.coderhouse.com/ar/carrera/fullstack-developer', description: 'Carrera completa de desarrollo web con React y Node.js.', addedBy: 'Líder Técnico', addedAt: '2026-03-01' },
   { id: 2, title: 'JavaScript Moderno',         skill: 'React', type: 'curso', url: 'https://www.coderhouse.com/ar/cursos/javascript', description: 'Fundamentos y conceptos avanzados de JavaScript ES6+.', addedBy: 'Líder Técnico', addedAt: '2026-03-01' },
@@ -97,14 +160,20 @@ export default function App() {
   const [profile, setProfile]         = useState(() => load('cp_profile',    defaultProfile))
   const [skills, setSkills]           = useState(() => load('cp_skills',     defaultSkills))
   const [objectives, setObjectives]   = useState(() => load('cp_objectives', defaultObjectives))
-  const [actionItems, setActionItems] = useState(() => load('cp_actions',    defaultActionItems))
-  const [catalog, setCatalog]         = useState(() => load('cp_catalog',    defaultCatalog))
+  const [actionItems, setActionItems]         = useState(() => load('cp_actions',      defaultActionItems))
+  const [catalog, setCatalog]                 = useState(() => load('cp_catalog',      defaultCatalog))
+  const [competencies, setCompetencies]       = useState(() => load('cp_competencies', defaultCompetencies))
+  const [levelObjectives, setLevelObjectives] = useState(() => load('cp_level_objs',   defaultLevelObjectives))
+  const [resolvedAlerts, setResolvedAlerts]   = useState(() => load('cp_resolved_alerts', []))
 
   useEffect(() => { localStorage.setItem('cp_profile',    JSON.stringify(profile)) },    [profile])
   useEffect(() => { localStorage.setItem('cp_skills',     JSON.stringify(skills)) },     [skills])
   useEffect(() => { localStorage.setItem('cp_objectives', JSON.stringify(objectives)) }, [objectives])
-  useEffect(() => { localStorage.setItem('cp_actions',    JSON.stringify(actionItems)) },[actionItems])
-  useEffect(() => { localStorage.setItem('cp_catalog',    JSON.stringify(catalog)) },    [catalog])
+  useEffect(() => { localStorage.setItem('cp_actions',      JSON.stringify(actionItems)) },    [actionItems])
+  useEffect(() => { localStorage.setItem('cp_catalog',      JSON.stringify(catalog)) },      [catalog])
+  useEffect(() => { localStorage.setItem('cp_competencies', JSON.stringify(competencies)) },  [competencies])
+  useEffect(() => { localStorage.setItem('cp_level_objs',     JSON.stringify(levelObjectives)) },  [levelObjectives])
+  useEffect(() => { localStorage.setItem('cp_resolved_alerts', JSON.stringify(resolvedAlerts)) },  [resolvedAlerts])
   useEffect(() => {
     if (leaderRole) sessionStorage.setItem('cp_role', 'leader')
     else sessionStorage.removeItem('cp_role')
@@ -116,6 +185,9 @@ export default function App() {
     objectives, setObjectives,
     actionItems, setActionItems,
     catalog, setCatalog,
+    competencies, setCompetencies,
+    levelObjectives, setLevelObjectives,
+    resolvedAlerts, setResolvedAlerts,
     leaderRole, setLeaderRole,
   }
 
@@ -128,8 +200,8 @@ export default function App() {
     goals:       <Goals />,
     reviews:     <Reviews />,
     meetings:    <Meetings />,
-    settings:    <Settings />,
-    admin:       <Admin />,
+    settings: <Settings />,
+    admin:    <Admin />,
   }
 
   return (

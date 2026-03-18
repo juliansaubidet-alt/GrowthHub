@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react'
+import { useApp } from '../App'
+import { Lock, Eye, EyeOff, X, Plus, Trash2, Edit3, ChevronDown, ChevronRight } from 'lucide-react'
 
 /* ─── shared helpers ─────────────────────────────────────────────── */
 const CIRCUMFERENCE = 2 * Math.PI * 32
@@ -1529,8 +1531,790 @@ const PROGRESSION = [
 
 const REQUIRED_SKILLS = ['Visual Design', 'Prototyping', 'UX Research', 'Figma Advanced', 'Stakeholder Mgmt', 'Design Systems']
 
+
+/* ─── COMPETENCY FRAMEWORK BUILDER ─────────────────────────────── */
+const CAT_OPTIONS = ['Técnico', 'Liderazgo', 'Soft Skills', 'Estrategia', 'Otro']
+const CAT_COLORS  = { 'Técnico': 'bg-h-50 text-h-800', 'Liderazgo': 'bg-p-50 text-p-800', 'Soft Skills': 'bg-t-50 text-t-800', 'Estrategia': 'bg-y-50 text-y-700', 'Otro': 'bg-n-100 text-n-800' }
+
+function CompetencyBuilder() {
+  const { competencies, setCompetencies } = useApp()
+  const [selected, setSelected]   = useState(competencies[0]?.id ?? null)
+  const [editingComp, setEditingComp] = useState(null)   // id being edited, or 'new'
+  const [compDraft, setCompDraft] = useState({ name: '', category: 'Técnico', description: '' })
+  const [newSkillText, setNewSkillText] = useState('')
+  const [editingSkill, setEditingSkill] = useState(null) // { compId, skillId }
+  const [skillDraft, setSkillDraft]     = useState({ name: '', description: '' })
+
+  const selComp = competencies.find(c => c.id === selected)
+
+  /* Competency CRUD */
+  const saveComp = () => {
+    if (!compDraft.name.trim()) return
+    if (editingComp === 'new') {
+      const next = { ...compDraft, id: Date.now(), skills: [] }
+      setCompetencies(p => [...p, next])
+      setSelected(next.id)
+    } else {
+      setCompetencies(p => p.map(c => c.id === editingComp ? { ...c, ...compDraft } : c))
+    }
+    setEditingComp(null)
+  }
+  const deleteComp = (id) => {
+    setCompetencies(p => p.filter(c => c.id !== id))
+    if (selected === id) setSelected(competencies.find(c => c.id !== id)?.id ?? null)
+  }
+  const startNewComp = () => { setCompDraft({ name: '', category: 'Técnico', description: '' }); setEditingComp('new') }
+  const startEditComp = (c) => { setCompDraft({ name: c.name, category: c.category, description: c.description }); setEditingComp(c.id) }
+
+  /* Skill CRUD */
+  const addSkill = (compId) => {
+    if (!newSkillText.trim()) return
+    setCompetencies(p => p.map(c => c.id === compId
+      ? { ...c, skills: [...c.skills, { id: Date.now(), name: newSkillText.trim(), description: '' }] }
+      : c))
+    setNewSkillText('')
+  }
+  const deleteSkill = (compId, skillId) => {
+    setCompetencies(p => p.map(c => c.id === compId ? { ...c, skills: c.skills.filter(s => s.id !== skillId) } : c))
+  }
+  const saveSkill = () => {
+    if (!skillDraft.name.trim() || !editingSkill) return
+    setCompetencies(p => p.map(c => c.id === editingSkill.compId
+      ? { ...c, skills: c.skills.map(s => s.id === editingSkill.skillId ? { ...s, ...skillDraft } : s) }
+      : c))
+    setEditingSkill(null)
+  }
+
+  return (
+    <div className="flex gap-5">
+      {/* LEFT: list */}
+      <div style={{ width: 240 }} className="shrink-0">
+        <div className="bg-white rounded-2xl shadow-4dp overflow-hidden">
+          <div className="px-4 py-3.5 border-b border-n-100 flex items-center justify-between">
+            <span className="text-[13px] font-semibold text-n-950">Competencias</span>
+            <button onClick={startNewComp} className="h-7 px-2.5 bg-h-500 hover:bg-h-600 text-white rounded-lg text-[11px] font-semibold transition-colors flex items-center gap-1">
+              <Plus size={11} /> Nueva
+            </button>
+          </div>
+          <div className="p-2 flex flex-col gap-0.5">
+            {competencies.map(c => (
+              <div key={c.id} onClick={() => setSelected(c.id)}
+                className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-lg cursor-pointer transition-colors group ${selected === c.id ? 'bg-h-50' : 'hover:bg-n-50'}`}>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[12px] font-semibold text-n-950 truncate">{c.name}</p>
+                  <span className={`text-[10px] font-semibold px-1.5 py-0 rounded-full ${CAT_COLORS[c.category] || 'bg-n-100 text-n-800'}`}>{c.category}</span>
+                </div>
+                <span className="text-[10px] text-n-500 shrink-0">{c.skills.length} skills</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* RIGHT: detail / editor */}
+      <div className="flex-1 min-w-0 flex flex-col gap-4">
+        {/* Inline form for new/edit competency */}
+        {editingComp && (
+          <div className="bg-h-50 border-2 border-h-200 rounded-2xl p-5 animate-slide-in">
+            <p className="text-[13px] font-semibold text-h-800 mb-3">{editingComp === 'new' ? 'Nueva Competencia' : 'Editar Competencia'}</p>
+            <div className="grid grid-cols-2 gap-3 mb-3">
+              <div>
+                <label className="text-[10px] font-semibold text-n-700 uppercase tracking-wide mb-1 block">Nombre *</label>
+                <input value={compDraft.name} onChange={e => setCompDraft(d => ({ ...d, name: e.target.value }))} placeholder="Ej: Diseño Visual" className="input-humand" />
+              </div>
+              <div>
+                <label className="text-[10px] font-semibold text-n-700 uppercase tracking-wide mb-1 block">Categoría</label>
+                <select value={compDraft.category} onChange={e => setCompDraft(d => ({ ...d, category: e.target.value }))} className="input-humand">
+                  {CAT_OPTIONS.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+              <div className="col-span-2">
+                <label className="text-[10px] font-semibold text-n-700 uppercase tracking-wide mb-1 block">Descripción</label>
+                <input value={compDraft.description} onChange={e => setCompDraft(d => ({ ...d, description: e.target.value }))} placeholder="Descripción breve..." className="input-humand" />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setEditingComp(null)} className="h-8 px-3 text-[12px] font-semibold text-n-800 hover:text-n-950 rounded-lg hover:bg-n-100 transition">Cancelar</button>
+              <button onClick={saveComp} className="h-8 px-3 bg-h-500 hover:bg-h-600 text-white rounded-lg text-[12px] font-semibold transition">Guardar</button>
+            </div>
+          </div>
+        )}
+
+        {selComp && !editingComp && (
+          <div className="bg-white rounded-2xl shadow-4dp overflow-hidden">
+            <div className="px-6 py-4 border-b border-n-100 flex items-center justify-between">
+              <div>
+                <div className="flex items-center gap-2">
+                  <p className="text-[13px] font-semibold text-n-950">{selComp.name}</p>
+                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${CAT_COLORS[selComp.category] || 'bg-n-100 text-n-800'}`}>{selComp.category}</span>
+                </div>
+                {selComp.description && <p className="text-[11px] text-n-600 mt-0.5">{selComp.description}</p>}
+              </div>
+              <div className="flex gap-1">
+                <button onClick={() => startEditComp(selComp)} className="p-1.5 text-n-500 hover:text-h-600 hover:bg-h-50 rounded-lg transition"><Edit3 size={14} /></button>
+                <button onClick={() => deleteComp(selComp.id)} className="p-1.5 text-n-500 hover:text-r-600 hover:bg-r-50 rounded-lg transition"><Trash2 size={14} /></button>
+              </div>
+            </div>
+
+            <div className="p-5">
+              <p className="text-[10px] font-semibold text-n-600 uppercase tracking-widest mb-3">Habilidades ({selComp.skills.length})</p>
+              <div className="flex flex-col gap-2 mb-4">
+                {selComp.skills.length === 0 && <p className="text-xs text-n-500 italic">Sin habilidades aún. Agregá la primera abajo.</p>}
+                {selComp.skills.map(sk => (
+                  <div key={sk.id}>
+                    {editingSkill?.skillId === sk.id ? (
+                      <div className="flex gap-2 items-center bg-n-50 p-2 rounded-lg">
+                        <input value={skillDraft.name} onChange={e => setSkillDraft(d => ({ ...d, name: e.target.value }))} className="input-humand flex-1" style={{ height: 32 }} />
+                        <input value={skillDraft.description} onChange={e => setSkillDraft(d => ({ ...d, description: e.target.value }))} placeholder="Descripción" className="input-humand flex-1" style={{ height: 32 }} />
+                        <button onClick={saveSkill} className="h-8 px-3 bg-h-500 text-white rounded-lg text-[12px] font-semibold hover:bg-h-600 transition shrink-0">OK</button>
+                        <button onClick={() => setEditingSkill(null)} className="text-n-500 hover:text-n-950"><X size={14} /></button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-3 px-3 py-2 rounded-lg border border-n-100 hover:border-n-200 group transition-colors">
+                        <div className="w-1.5 h-1.5 rounded-full bg-h-400 shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[13px] font-semibold text-n-950">{sk.name}</p>
+                          {sk.description && <p className="text-[11px] text-n-600">{sk.description}</p>}
+                        </div>
+                        <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button onClick={() => { setEditingSkill({ compId: selComp.id, skillId: sk.id }); setSkillDraft({ name: sk.name, description: sk.description }) }}
+                            className="p-1 text-n-500 hover:text-h-600 rounded transition"><Edit3 size={12} /></button>
+                          <button onClick={() => deleteSkill(selComp.id, sk.id)}
+                            className="p-1 text-n-500 hover:text-r-600 rounded transition"><Trash2 size={12} /></button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+              {/* Add skill inline */}
+              <div className="flex gap-2">
+                <input value={newSkillText} onChange={e => setNewSkillText(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && addSkill(selComp.id)}
+                  placeholder="Nombre de nueva habilidad..." className="input-humand flex-1" style={{ height: 36 }} />
+                <button onClick={() => addSkill(selComp.id)}
+                  className="h-9 px-3 bg-h-500 hover:bg-h-600 text-white rounded-lg text-[12px] font-semibold transition flex items-center gap-1">
+                  <Plus size={13} /> Agregar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {!selComp && !editingComp && (
+          <div className="bg-white rounded-2xl shadow-4dp flex items-center justify-center py-16 text-n-500">
+            <p className="text-sm">Seleccioná una competencia o creá una nueva</p>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+const SEVERITY_STYLE = {
+  alto:  { bar: 'border-l-4 border-r-600 bg-r-50',  badge: 'bg-r-50 text-r-600',  btn: 'bg-r-600 hover:bg-r-700' },
+  medio: { bar: 'border-l-4 border-y-400 bg-y-50',  badge: 'bg-y-50 text-y-700',  btn: 'bg-y-500 hover:bg-y-600' },
+}
+
+/* ─── SALUD ORGANIZACIONAL ───────────────────────────────────────── */
+const TEAM_HEALTH = [
+  {
+    team: 'Product Design', engagement: 82, planActivo: 75, retencion: 91, riesgo: 'bajo', manager: 'Valentina Cruz',
+    members: [
+      { name: 'Sofia Carro',    initials: 'SC', color: 'bg-h-100 text-h-700', role: 'Mid Designer',    plan: { active: true,  title: 'Avanzar a Senior Designer',     progress: 68, nextLevel: 'Senior' } },
+      { name: 'Ana Martínez',   initials: 'AM', color: 'bg-p-100 text-p-700', role: 'Senior Designer', plan: { active: true,  title: 'Avanzar a Lead Designer',       progress: 45, nextLevel: 'Lead'   } },
+      { name: 'Tomás Ríos',     initials: 'TR', color: 'bg-g-100 text-g-800', role: 'Junior Designer', plan: { active: true,  title: 'Avanzar a Mid Designer',        progress: 30, nextLevel: 'Mid'    } },
+      { name: 'Lucía Pérez',    initials: 'LP', color: 'bg-y-100 text-y-700', role: 'Junior Designer', plan: { active: false, title: 'Sin plan asignado',             progress: 0,  nextLevel: '—'      } },
+    ],
+  },
+  {
+    team: 'Frontend Engineering', engagement: 74, planActivo: 60, retencion: 84, riesgo: 'medio', manager: 'Martina Sol',
+    members: [
+      { name: 'Carlos Ruiz',    initials: 'CR', color: 'bg-h-100 text-h-700', role: 'Mid Frontend',    plan: { active: true,  title: 'Avanzar a Senior Frontend',     progress: 55, nextLevel: 'Senior' } },
+      { name: 'Martina Sol',    initials: 'MS', color: 'bg-t-100 text-t-700', role: 'Senior Frontend', plan: { active: true,  title: 'Especialización en Arquitectura', progress: 72, nextLevel: 'Lead'  } },
+      { name: 'Diego Vega',     initials: 'DV', color: 'bg-p-100 text-p-700', role: 'Junior Frontend', plan: { active: false, title: 'Sin plan asignado',             progress: 0,  nextLevel: '—'      } },
+      { name: 'Paula Méndez',   initials: 'PM', color: 'bg-r-100 text-r-600', role: 'Mid Frontend',    plan: { active: false, title: 'Sin plan asignado',             progress: 0,  nextLevel: '—'      } },
+      { name: 'Nicolás Vidal',  initials: 'NV', color: 'bg-g-100 text-g-800', role: 'Junior Frontend', plan: { active: true,  title: 'Avanzar a Mid Frontend',        progress: 22, nextLevel: 'Mid'    } },
+    ],
+  },
+  {
+    team: 'Backend Engineering', engagement: 68, planActivo: 45, retencion: 78, riesgo: 'alto', manager: 'Fernanda Ortiz',
+    members: [
+      { name: 'Rodrigo Blanco', initials: 'RB', color: 'bg-n-200 text-n-700', role: 'Mid Backend',     plan: { active: false, title: 'Sin plan asignado',             progress: 0,  nextLevel: '—'      } },
+      { name: 'Fernanda Ortiz', initials: 'FO', color: 'bg-h-100 text-h-700', role: 'Senior Backend',  plan: { active: true,  title: 'Tech Lead Backend',             progress: 40, nextLevel: 'Lead'   } },
+      { name: 'Gustavo Sosa',   initials: 'GS', color: 'bg-n-200 text-n-700', role: 'Junior Backend',  plan: { active: false, title: 'Sin plan asignado',             progress: 0,  nextLevel: '—'      } },
+      { name: 'Emilia Castro',  initials: 'EC', color: 'bg-p-100 text-p-700', role: 'Mid Backend',     plan: { active: true,  title: 'Avanzar a Senior Backend',      progress: 60, nextLevel: 'Senior' } },
+    ],
+  },
+  {
+    team: 'Data & Analytics', engagement: 79, planActivo: 70, retencion: 88, riesgo: 'bajo', manager: 'Matías Leal',
+    members: [
+      { name: 'Valentina Cruz', initials: 'VC', color: 'bg-t-100 text-t-700', role: 'Data Analyst',    plan: { active: true,  title: 'Avanzar a Senior Analyst',      progress: 65, nextLevel: 'Senior' } },
+      { name: 'Matías Leal',    initials: 'ML', color: 'bg-h-100 text-h-700', role: 'Senior Analyst',  plan: { active: true,  title: 'Data Science Lead',             progress: 50, nextLevel: 'Lead'   } },
+      { name: 'Camila Rojas',   initials: 'CR', color: 'bg-g-100 text-g-800', role: 'Junior Analyst',  plan: { active: false, title: 'Sin plan asignado',             progress: 0,  nextLevel: '—'      } },
+    ],
+  },
+  {
+    team: 'People & Culture', engagement: 88, planActivo: 90, retencion: 94, riesgo: 'bajo', manager: 'Sebastián Gil',
+    members: [
+      { name: 'Laura Romero',   initials: 'LR', color: 'bg-p-100 text-p-700', role: 'HR Specialist',   plan: { active: true,  title: 'Avanzar a HR Business Partner', progress: 80, nextLevel: 'Senior' } },
+      { name: 'Sebastián Gil',  initials: 'SG', color: 'bg-h-100 text-h-700', role: 'Talent Manager',  plan: { active: true,  title: 'Head of People',                progress: 55, nextLevel: 'Lead'   } },
+      { name: 'Agustina Mora',  initials: 'AM', color: 'bg-g-100 text-g-800', role: 'HR Analyst',      plan: { active: true,  title: 'Avanzar a HR Specialist',       progress: 70, nextLevel: 'Mid'    } },
+    ],
+  },
+  {
+    team: 'Growth Marketing', engagement: 65, planActivo: 40, retencion: 75, riesgo: 'alto', manager: 'Renata Lagos',
+    members: [
+      { name: 'Ignacio Funes',  initials: 'IF', color: 'bg-n-200 text-n-700', role: 'Growth Analyst',  plan: { active: false, title: 'Sin plan asignado',             progress: 0,  nextLevel: '—'      } },
+      { name: 'Renata Lagos',   initials: 'RL', color: 'bg-y-100 text-y-700', role: 'Growth Manager',  plan: { active: true,  title: 'Head of Growth',                progress: 35, nextLevel: 'Lead'   } },
+      { name: 'Bruno Espejo',   initials: 'BE', color: 'bg-n-200 text-n-700', role: 'Junior Growth',   plan: { active: false, title: 'Sin plan asignado',             progress: 0,  nextLevel: '—'      } },
+      { name: 'Daniela Vera',   initials: 'DV', color: 'bg-r-100 text-r-600', role: 'Content Manager', plan: { active: false, title: 'Sin plan asignado',             progress: 0,  nextLevel: '—'      } },
+      { name: 'Tomás Herrera',  initials: 'TH', color: 'bg-h-100 text-h-700', role: 'SEO Specialist',  plan: { active: true,  title: 'Avanzar a Senior Growth',       progress: 28, nextLevel: 'Senior' } },
+    ],
+  },
+]
+const RIESGO_BADGE = { bajo: 'bg-g-50 text-g-800', medio: 'bg-y-50 text-y-700', alto: 'bg-r-50 text-r-600' }
+const ENG_THRESHOLD = 70   // engagement < 70 = bajo
+const PLAN_THRESHOLD = 0.5 // > 50% sin plan = baja actividad
+
+function computeRiskAlerts() {
+  const alerts = []
+  TEAM_HEALTH.forEach(t => {
+    const sinPlan = t.members.filter(m => !m.plan.active).length
+    const sinPlanPct = sinPlan / t.members.length
+    if (t.engagement < ENG_THRESHOLD)
+      alerts.push({ id: `eng-${t.team}`, team: t.team, manager: t.manager, severity: t.engagement < 60 ? 'alto' : 'medio',
+        type: 'Engagement bajo', message: `Engagement del equipo en ${t.engagement}% (umbral: ${ENG_THRESHOLD}%)`, icon: '📉' })
+    if (sinPlanPct > PLAN_THRESHOLD)
+      alerts.push({ id: `plan-${t.team}`, team: t.team, manager: t.manager, severity: sinPlanPct > 0.7 ? 'alto' : 'medio',
+        type: 'Baja actividad', message: `${sinPlan} de ${t.members.length} integrantes sin plan activo`, icon: '⚠️' })
+    if (t.riesgo === 'alto' && t.engagement >= ENG_THRESHOLD && sinPlanPct <= PLAN_THRESHOLD)
+      alerts.push({ id: `riesgo-${t.team}`, team: t.team, manager: t.manager, severity: 'alto',
+        type: 'Equipo en riesgo', message: `Retención proyectada en ${t.retencion}% — requiere atención`, icon: '🔴' })
+  })
+  return alerts
+}
+
+function SaludOrganizacional() {
+  const { resolvedAlerts, setResolvedAlerts } = useApp()
+  const [expanded, setExpanded] = useState(null)
+  const [sent, setSent] = useState({})          // { alertId: true } = notificación enviada
+  const toggle = (team) => setExpanded(e => e === team ? null : team)
+  const avg = (key) => Math.round(TEAM_HEALTH.reduce((a, t) => a + t[key], 0) / TEAM_HEALTH.length)
+  const riesgoAlto = TEAM_HEALTH.filter(t => t.riesgo === 'alto').length
+
+  const allAlerts   = computeRiskAlerts()
+  const activeAlerts = allAlerts.filter(a => !resolvedAlerts.includes(a.id))
+
+  const sendNotification = (alert) => {
+    setSent(s => ({ ...s, [alert.id]: true }))
+    // persiste en resolvedAlerts después de 3s para simular "enviada y procesada"
+    setTimeout(() => setResolvedAlerts(r => [...r, alert.id]), 3000)
+  }
+  const resolveAlert = (id) => setResolvedAlerts(r => [...r, id])
+
+  return (
+    <div className="flex flex-col gap-5">
+
+      {/* ── Alertas de riesgo automáticas ── */}
+      {activeAlerts.length > 0 && (
+        <div className="bg-white rounded-2xl shadow-4dp overflow-hidden">
+          <div className="px-5 py-3.5 border-b border-n-100 flex items-center gap-2">
+            <span className="text-base">🚨</span>
+            <p className="text-[13px] font-semibold text-n-950 flex-1">Alertas de riesgo detectadas</p>
+            <span className="text-[11px] font-bold bg-r-50 text-r-600 px-2 py-0.5 rounded-full">{activeAlerts.length} activas</span>
+          </div>
+          <div className="divide-y divide-n-50">
+            {activeAlerts.map(alert => {
+              const st = SEVERITY_STYLE[alert.severity]
+              const wasSent = sent[alert.id]
+              return (
+                <div key={alert.id} className={`flex items-start gap-4 px-5 py-4 ${st.bar}`}>
+                  <span className="text-xl shrink-0 mt-0.5">{alert.icon}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${st.badge}`}>{alert.severity.toUpperCase()}</span>
+                      <span className="text-[12px] font-semibold text-n-950">{alert.type} — {alert.team}</span>
+                    </div>
+                    <p className="text-[12px] text-n-600">{alert.message}</p>
+                    <p className="text-[11px] text-n-500 mt-0.5">Manager: <span className="font-semibold text-n-800">{alert.manager}</span></p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {wasSent ? (
+                      <span className="flex items-center gap-1 text-[11px] font-semibold text-g-700 bg-g-50 px-3 py-1.5 rounded-lg">
+                        ✓ Notificación enviada
+                      </span>
+                    ) : (
+                      <button onClick={() => sendNotification(alert)}
+                        className={`h-8 px-3 text-white text-[12px] font-semibold rounded-lg transition ${st.btn}`}>
+                        Notificar a {alert.manager.split(' ')[0]}
+                      </button>
+                    )}
+                    <button onClick={() => resolveAlert(alert.id)} className="text-n-400 hover:text-n-700 text-xs transition px-2">Ignorar</button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {activeAlerts.length === 0 && (
+        <div className="flex items-center gap-3 px-5 py-4 bg-g-50 border border-g-200 rounded-2xl">
+          <span className="text-xl">✅</span>
+          <p className="text-[13px] font-semibold text-g-800">Sin alertas activas — todos los equipos dentro de los umbrales normales</p>
+        </div>
+      )}
+
+      {/* KPIs */}
+      <div className="grid grid-cols-4 gap-4">
+        {[
+          { label: 'Engagement promedio', value: `${avg('engagement')}%`, sub: '+3% vs mes anterior',    color: 'text-h-600' },
+          { label: '% con plan activo',    value: `${avg('planActivo')}%`, sub: `${TEAM_HEALTH.filter(t => t.planActivo >= 60).length}/${TEAM_HEALTH.length} equipos`, color: 'text-g-800' },
+          { label: 'Retención proyectada', value: `${avg('retencion')}%`, sub: 'Próximos 12 meses',      color: 'text-t-700' },
+          { label: 'Equipos en riesgo',    value: riesgoAlto,             sub: 'Requieren atención',     color: 'text-r-600' },
+        ].map(s => (
+          <div key={s.label} className="bg-white rounded-2xl shadow-4dp p-4">
+            <p className={`text-3xl font-bold ${s.color}`}>{s.value}</p>
+            <p className="text-[12px] font-semibold text-n-950 mt-1">{s.label}</p>
+            <p className="text-[11px] text-n-600">{s.sub}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Accordion by team */}
+      <div className="bg-white rounded-2xl shadow-4dp overflow-hidden">
+        <div className="px-6 py-4 border-b border-n-100">
+          <p className="text-[13px] font-semibold text-n-950">Salud por equipo</p>
+          <p className="text-[11px] text-n-600">Hacé click en un equipo para ver sus integrantes y planes de carrera</p>
+        </div>
+        {/* Table header */}
+        <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_32px] items-center px-6 py-2.5 border-b border-n-100 bg-n-50">
+          {['Equipo','Engagement','Plan activo','Retención proy.','Riesgo',''].map(h => (
+            <span key={h} className="text-[10px] font-semibold text-n-600 uppercase tracking-widest">{h}</span>
+          ))}
+        </div>
+        {/* Rows */}
+        <div className="divide-y divide-n-50">
+          {TEAM_HEALTH.map(t => {
+            const open = expanded === t.team
+            const withPlan = t.members.filter(m => m.plan.active).length
+            return (
+              <div key={t.team}>
+                {/* Team row */}
+                <button
+                  onClick={() => toggle(t.team)}
+                  className={`w-full grid grid-cols-[2fr_1fr_1fr_1fr_1fr_32px] items-center px-6 py-3.5 text-left transition-colors ${open ? 'bg-h-50' : 'hover:bg-n-50'}`}
+                >
+                  <div className="flex items-center gap-2">
+                    {open ? <ChevronDown size={14} className="text-h-500 shrink-0" /> : <ChevronRight size={14} className="text-n-400 shrink-0" />}
+                    <span className="text-[13px] font-semibold text-n-950">{t.team}</span>
+                    <span className="text-[10px] text-n-500 font-medium">{t.members.length} personas</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-20 h-1.5 bg-n-100 rounded-full overflow-hidden">
+                      <div className="h-full rounded-full" style={{ width: `${t.engagement}%`, backgroundColor: t.engagement >= 80 ? '#35a48e' : t.engagement >= 70 ? '#f59e0b' : '#ef4444' }} />
+                    </div>
+                    <span className="text-[12px] text-n-600">{t.engagement}%</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-20 h-1.5 bg-n-100 rounded-full overflow-hidden">
+                      <div className="h-full bg-h-500 rounded-full" style={{ width: `${t.planActivo}%` }} />
+                    </div>
+                    <span className="text-[12px] text-n-600">{withPlan}/{t.members.length}</span>
+                  </div>
+                  <span className="text-[12px] text-n-600">{t.retencion}%</span>
+                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full capitalize w-fit ${RIESGO_BADGE[t.riesgo]}`}>{t.riesgo}</span>
+                  <span />
+                </button>
+
+                {/* Members panel */}
+                {open && (
+                  <div className="bg-h-50 border-t border-h-100 px-6 py-4 animate-fade-in">
+                    <div className="grid grid-cols-[2fr_2fr_1fr_80px] gap-2 px-3 pb-2">
+                      {['Integrante','Plan de carrera','Siguiente nivel','Progreso'].map(h => (
+                        <span key={h} className="text-[10px] font-semibold text-n-600 uppercase tracking-widest">{h}</span>
+                      ))}
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      {t.members.map(m => (
+                        <div key={m.name} className={`grid grid-cols-[2fr_2fr_1fr_80px] gap-2 items-center px-3 py-2.5 rounded-xl border ${m.plan.active ? 'bg-white border-n-100' : 'bg-n-50 border-n-100 opacity-75'}`}>
+                          {/* Member */}
+                          <div className="flex items-center gap-2.5">
+                            <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${m.color}`}>{m.initials}</div>
+                            <div className="min-w-0">
+                              <p className="text-[12px] font-semibold text-n-950 truncate">{m.name}</p>
+                              <p className="text-[10px] text-n-500 truncate">{m.role}</p>
+                            </div>
+                          </div>
+                          {/* Plan title */}
+                          <div className="flex items-center gap-1.5">
+                            {m.plan.active
+                              ? <span className="text-[12px] text-n-800 truncate">{m.plan.title}</span>
+                              : <span className="text-[11px] text-n-400 italic">Sin plan asignado</span>}
+                          </div>
+                          {/* Next level */}
+                          <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full w-fit ${m.plan.active ? 'bg-h-50 text-h-700' : 'bg-n-100 text-n-400'}`}>{m.plan.nextLevel}</span>
+                          {/* Progress */}
+                          {m.plan.active ? (
+                            <div className="flex items-center gap-1.5">
+                              <div className="flex-1 h-1.5 bg-n-100 rounded-full overflow-hidden">
+                                <div className="h-full bg-h-500 rounded-full" style={{ width: `${m.plan.progress}%` }} />
+                              </div>
+                              <span className="text-[11px] font-semibold text-h-600 w-7 text-right shrink-0">{m.plan.progress}%</span>
+                            </div>
+                          ) : (
+                            <span className="text-[11px] text-n-300">—</span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Coverage bars */}
+      <div className="bg-white rounded-2xl shadow-4dp p-5">
+        <p className="text-[13px] font-semibold text-n-950 mb-4">Cobertura de planes por equipo</p>
+        <div className="flex flex-col gap-3">
+          {TEAM_HEALTH.map(t => {
+            const withPlan = t.members.filter(m => m.plan.active).length
+            const pct = Math.round((withPlan / t.members.length) * 100)
+            return (
+              <div key={t.team} className="flex items-center gap-3">
+                <span className="text-[12px] text-n-800 w-44 truncate shrink-0">{t.team}</span>
+                <div className="flex-1 h-2 bg-n-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-h-500 rounded-full bar-fill" style={{ width: `${pct}%` }} />
+                </div>
+                <span className="text-[12px] font-semibold text-n-950 w-16 text-right shrink-0">{withPlan}/{t.members.length}</span>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* ─── HEADCOUNT PLANNING ─────────────────────────────────────────── */
+const ROLES_CATALOG = [
+  { id: 'sr-designer', label: 'Senior Designer',      area: 'Design',      requiredSkills: ['Figma','Prototyping','Design Systems','UX Research','Stakeholder Mgmt'] },
+  { id: 'tech-lead',   label: 'Tech Lead Frontend',   area: 'Engineering', requiredSkills: ['React','TypeScript','Liderazgo','Arquitectura','Mentoring'] },
+  { id: 'pm',          label: 'Product Manager',      area: 'Product',     requiredSkills: ['Roadmapping','Stakeholder Mgmt','Agile','Data Analysis','Comunicación'] },
+]
+const INT_CANDIDATES = [
+  { name: 'Ana Martínez', current: 'Mid Designer',     initials: 'AM', color: 'bg-h-100 text-h-700', skills: ['Figma','Prototyping','Design Systems','UX Research'] },
+  { name: 'Luis Torres',  current: 'Senior Designer',  initials: 'LT', color: 'bg-p-100 text-p-700', skills: ['Figma','Prototyping','Design Systems','UX Research','Stakeholder Mgmt'] },
+  { name: 'María Gómez',  current: 'Mid Designer',     initials: 'MG', color: 'bg-g-100 text-g-800', skills: ['Figma','Prototyping','UX Research'] },
+  { name: 'Carlos Ruiz',  current: 'Junior Designer',  initials: 'CR', color: 'bg-y-100 text-y-700', skills: ['Figma','Prototyping'] },
+]
+function HeadcountPlanning() {
+  const [selectedRole, setSelectedRole] = useState(ROLES_CATALOG[0].id)
+  const role = ROLES_CATALOG.find(r => r.id === selectedRole)
+  const candidates = INT_CANDIDATES.map(c => {
+    const matched = c.skills.filter(s => role.requiredSkills.includes(s)).length
+    const pct     = Math.round((matched / role.requiredSkills.length) * 100)
+    return { ...c, pct, missingForRole: role.requiredSkills.filter(s => !c.skills.includes(s)) }
+  }).sort((a, b) => b.pct - a.pct)
+  return (
+    <div className="flex flex-col gap-5">
+      <div className="bg-h-50 border border-h-100 rounded-2xl p-5 flex items-start gap-3">
+        <span className="text-2xl shrink-0">🔍</span>
+        <div>
+          <p className="text-[13px] font-semibold text-h-800">Antes de abrir una búsqueda externa</p>
+          <p className="text-[12px] text-h-700 mt-0.5">El sistema evalúa el alineamiento de competencias de candidatos internos al rol objetivo. Si hay candidatos con ≥ 80% de alineación, priorizá el desarrollo interno.</p>
+        </div>
+      </div>
+      <div className="bg-white rounded-2xl shadow-4dp p-5">
+        <p className="text-[11px] font-semibold text-n-600 uppercase tracking-widest mb-2">Rol a cubrir</p>
+        <div className="flex gap-2 flex-wrap mb-3">
+          {ROLES_CATALOG.map(r => (
+            <button key={r.id} onClick={() => setSelectedRole(r.id)}
+              className={`h-9 px-4 rounded-xl text-[13px] font-semibold border transition-all ${selectedRole === r.id ? 'bg-h-500 text-white border-h-500 shadow-4dp' : 'bg-white text-n-800 border-n-200 hover:border-h-300'}`}>
+              {r.label}
+            </button>
+          ))}
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          <span className="text-[11px] text-n-600 font-semibold">Skills requeridas:</span>
+          {role.requiredSkills.map(s => (
+            <span key={s} className="text-[11px] bg-h-500 text-white px-2.5 py-0.5 rounded-lg font-medium">{s}</span>
+          ))}
+        </div>
+      </div>
+      <div className="flex flex-col gap-3">
+        <p className="text-[11px] font-semibold text-n-600 uppercase tracking-widest">Candidatos internos — ordenados por alineación</p>
+        {candidates.map((c, i) => (
+          <div key={c.name} className={`bg-white rounded-2xl shadow-4dp p-5 border transition-all ${c.pct >= 80 ? 'border-g-200 hover:shadow-8dp' : c.pct >= 60 ? 'border-y-200' : 'border-n-100'}`}>
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${c.color}`}>{c.initials}</div>
+                {i === 0 && <span className="absolute -top-1 -right-1 text-xs">⭐</span>}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="text-[13px] font-semibold text-n-950">{c.name}</p>
+                  {c.pct >= 80 && <span className="text-[10px] font-bold bg-g-50 text-g-800 px-2 py-0.5 rounded-full">Listo para promover</span>}
+                  {c.pct >= 60 && c.pct < 80 && <span className="text-[10px] font-bold bg-y-50 text-y-700 px-2 py-0.5 rounded-full">Desarrollo a corto plazo</span>}
+                  {c.pct < 60 && <span className="text-[10px] font-bold bg-n-100 text-n-600 px-2 py-0.5 rounded-full">Desarrollo a largo plazo</span>}
+                </div>
+                <p className="text-[11px] text-n-600">{c.current}</p>
+              </div>
+              <div className="text-right shrink-0">
+                <p className={`text-2xl font-bold ${c.pct >= 80 ? 'text-g-700' : c.pct >= 60 ? 'text-y-600' : 'text-n-500'}`}>{c.pct}%</p>
+                <p className="text-[10px] text-n-600">alineación</p>
+              </div>
+            </div>
+            <div className="mt-3 w-full h-1.5 bg-n-100 rounded-full overflow-hidden">
+              <div className="h-full rounded-full bar-fill" style={{ width: `${c.pct}%`, backgroundColor: c.pct >= 80 ? '#35a48e' : c.pct >= 60 ? '#f59e0b' : '#9ca3af' }} />
+            </div>
+            {c.missingForRole.length > 0 && (
+              <div className="mt-2 flex items-center gap-2 flex-wrap">
+                <span className="text-[10px] text-n-500 font-semibold">Gaps:</span>
+                {c.missingForRole.map(s => (
+                  <span key={s} className="text-[10px] bg-h-500 text-white px-2.5 py-0.5 rounded-lg font-medium">{s}</span>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/* ─── CONFIGURACIÓN DE VISIBILIDAD ──────────────────────────────── */
+const VIS_MATRIX_DEFAULT = {
+  L2: { L1: true,  L2: false, L3: false, L4: false },
+  L3: { L1: true,  L2: true,  L3: false, L4: false },
+  L4: { L1: true,  L2: true,  L3: true,  L4: false },
+  HR: { L1: true,  L2: true,  L3: true,  L4: true  },
+}
+const VIS_FIELDS_DEFAULT = {
+  plan:     { label: 'Plan de carrera completo',   on: true  },
+  progress: { label: 'Progreso en objetivos',      on: true  },
+  goals:    { label: 'Objetivos personales',       on: true  },
+  salary:   { label: 'Información salarial',       on: false },
+  feedback: { label: 'Feedback recibido',          on: false },
+  perf:     { label: 'Evaluaciones de desempeño',  on: true  },
+}
+function Toggle({ on, onToggle }) {
+  return (
+    <button onClick={onToggle} className={`w-10 h-6 rounded-full transition-colors relative shrink-0 ${on ? 'bg-h-500' : 'bg-n-200'}`}>
+      <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-all ${on ? 'left-[18px]' : 'left-0.5'}`} />
+    </button>
+  )
+}
+function ConfigVisibilidad() {
+  const [matrix, setMatrix] = useState(VIS_MATRIX_DEFAULT)
+  const [fields, setFields] = useState(VIS_FIELDS_DEFAULT)
+  const [saved, setSaved]   = useState(false)
+  const LEVELS  = ['L1','L2','L3','L4']
+  const VIEWERS = ['L2','L3','L4','HR']
+  const VIEWER_LABELS = { L2:'Mid (L2)', L3:'Senior (L3)', L4:'Lead (L4)', HR:'HR Admin' }
+  const toggle = (viewer, target) => setMatrix(m => ({ ...m, [viewer]: { ...m[viewer], [target]: !m[viewer][target] } }))
+  const save   = () => { setSaved(true); setTimeout(() => setSaved(false), 2000) }
+  return (
+    <div className="flex flex-col gap-5">
+      <div className="bg-y-50 border border-y-200 rounded-2xl p-4 flex items-start gap-3">
+        <span className="text-xl shrink-0">⚠️</span>
+        <p className="text-[12px] text-y-800">Estas reglas definen qué información puede ver cada nivel sobre los planes del nivel inferior. Los cambios tienen impacto en toda la organización.</p>
+      </div>
+      <div className="bg-white rounded-2xl shadow-4dp overflow-hidden">
+        <div className="px-6 py-4 border-b border-n-100">
+          <p className="text-[13px] font-semibold text-n-950">Matriz de visibilidad</p>
+          <p className="text-[11px] text-n-600 mt-0.5">Filas = quién observa · Columnas = a quién puede ver</p>
+        </div>
+        <div className="p-5 overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr>
+                <th className="text-left text-[10px] font-semibold text-n-600 uppercase tracking-widest pb-3 pr-8">Puede ver →</th>
+                {LEVELS.map(l => <th key={l} className="text-center text-[10px] font-semibold text-n-600 uppercase tracking-widest pb-3 px-4">{l}</th>)}
+              </tr>
+            </thead>
+            <tbody>
+              {VIEWERS.map(viewer => (
+                <tr key={viewer} className="border-t border-n-50">
+                  <td className="py-3 pr-8 text-[12px] font-semibold text-n-950">{VIEWER_LABELS[viewer]}</td>
+                  {LEVELS.map(target => {
+                    const has = matrix[viewer]?.[target] !== undefined
+                    return (
+                      <td key={target} className="py-3 px-4 text-center">
+                        {!has ? <span className="text-n-300 text-xs">—</span>
+                          : <Toggle on={matrix[viewer][target]} onToggle={() => toggle(viewer, target)} />}
+                      </td>
+                    )
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div className="bg-white rounded-2xl shadow-4dp p-5">
+        <p className="text-[13px] font-semibold text-n-950 mb-4">Visibilidad por tipo de dato</p>
+        <div className="flex flex-col gap-1">
+          {Object.entries(fields).map(([key, meta]) => (
+            <div key={key} className="flex items-center justify-between py-3 border-b border-n-50 last:border-0">
+              <div>
+                <p className="text-[13px] text-n-950">{meta.label}</p>
+                {!meta.on && <p className="text-[11px] text-r-500">Solo visible para HR Admin</p>}
+              </div>
+              <Toggle on={meta.on} onToggle={() => setFields(f => ({ ...f, [key]: { ...f[key], on: !f[key].on } }))} />
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="flex justify-end">
+        <button onClick={save} className={`h-9 px-6 rounded-lg text-[13px] font-semibold transition-all shadow-4dp ${saved ? 'bg-g-500 text-white' : 'bg-h-500 hover:bg-h-600 text-white'}`}>
+          {saved ? '✓ Guardado' : 'Guardar configuración'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+/* ─── MÉTRICAS DE IMPACTO ────────────────────────────────────────── */
+const MONTHLY_ADOPTION = [
+  { month: 'Oct', pct: 38 }, { month: 'Nov', pct: 45 }, { month: 'Dic', pct: 52 },
+  { month: 'Ene', pct: 58 }, { month: 'Feb', pct: 65 }, { month: 'Mar', pct: 72 },
+]
+const COMP_EVOLUTION = [
+  { area: 'Diseño Visual',      before: 52, after: 71 },
+  { area: 'Liderazgo',          before: 41, after: 63 },
+  { area: 'Comunicación',       before: 60, after: 74 },
+  { area: 'Desarrollo Técnico', before: 55, after: 78 },
+  { area: 'Soft Skills',        before: 48, after: 65 },
+]
+function MetricasImpacto() {
+  const NPS = 62
+  const npsColor = NPS >= 50 ? 'text-g-700' : NPS >= 30 ? 'text-y-600' : 'text-r-600'
+  return (
+    <div className="flex flex-col gap-5">
+      <div className="grid grid-cols-4 gap-4">
+        {[
+          { label: '% con plan activo',    value: '72%',  sub: '+14% vs inicio año',     color: 'text-h-600' },
+          { label: 'NPS del módulo',        value: NPS,    sub: 'Basado en 48 respuestas', color: npsColor    },
+          { label: 'Retención (con plan)',  value: '91%',  sub: 'vs 74% sin plan',         color: 'text-g-700' },
+          { label: 'Tiempo prom. a promo',  value: '9.2m', sub: '-2.1m vs año anterior',   color: 'text-p-700' },
+        ].map(s => (
+          <div key={s.label} className="bg-white rounded-2xl shadow-4dp p-4">
+            <p className={`text-3xl font-bold ${s.color}`}>{s.value}</p>
+            <p className="text-[12px] font-semibold text-n-950 mt-1">{s.label}</p>
+            <p className="text-[11px] text-n-600">{s.sub}</p>
+          </div>
+        ))}
+      </div>
+      <div className="grid grid-cols-2 gap-5">
+        <div className="bg-white rounded-2xl shadow-4dp p-5">
+          <p className="text-[13px] font-semibold text-n-950 mb-1">Adopción — últimos 6 meses</p>
+          <p className="text-[11px] text-n-600 mb-4">% de empleados con plan activo</p>
+          <div className="flex items-end gap-2 h-32">
+            {MONTHLY_ADOPTION.map(m => (
+              <div key={m.month} className="flex-1 flex flex-col items-center gap-1">
+                <span className="text-[10px] font-semibold text-h-600">{m.pct}%</span>
+                <div className="w-full bg-h-500 rounded-t-md" style={{ height: `${(m.pct / 100) * 96}px`, opacity: 0.55 + (m.pct / 250) }} />
+                <span className="text-[10px] text-n-500">{m.month}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="bg-white rounded-2xl shadow-4dp p-5">
+          <p className="text-[13px] font-semibold text-n-950 mb-1">NPS del módulo Career Path</p>
+          <p className="text-[11px] text-n-600 mb-3">¿Recomendarías usar esta herramienta?</p>
+          <div className="flex items-center justify-center mb-4">
+            <div className="text-center">
+              <p className={`text-5xl font-bold ${npsColor}`}>{NPS}</p>
+              <p className="text-[12px] text-n-600 mt-1">NPS Score</p>
+            </div>
+          </div>
+          <div className="flex flex-col gap-2">
+            {[
+              { label: 'Promotores (9-10)',  pct: 68, color: 'bg-g-400'  },
+              { label: 'Neutrales (7-8)',     pct: 26, color: 'bg-y-400'  },
+              { label: 'Detractores (0-6)',   pct:  6, color: 'bg-r-400'  },
+            ].map(r => (
+              <div key={r.label} className="flex items-center gap-2">
+                <span className="text-[11px] text-n-600 w-36 shrink-0">{r.label}</span>
+                <div className="flex-1 h-1.5 bg-n-100 rounded-full overflow-hidden">
+                  <div className={`h-full rounded-full ${r.color} bar-fill`} style={{ width: `${r.pct}%` }} />
+                </div>
+                <span className="text-[11px] font-semibold text-n-950 w-7 text-right shrink-0">{r.pct}%</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+      <div className="bg-white rounded-2xl shadow-4dp p-5">
+        <p className="text-[13px] font-semibold text-n-950 mb-1">Evolución de competencias por área</p>
+        <p className="text-[11px] text-n-600 mb-5">Score promedio del equipo — antes vs. después de activar planes</p>
+        <div className="flex flex-col gap-4">
+          {COMP_EVOLUTION.map(c => (
+            <div key={c.area}>
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[12px] font-semibold text-n-950">{c.area}</span>
+                <span className="text-[11px] font-bold text-g-700">+{c.after - c.before} pts</span>
+              </div>
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] text-n-500 w-12 shrink-0">Antes</span>
+                  <div className="flex-1 h-1.5 bg-n-100 rounded-full overflow-hidden">
+                    <div className="h-full bg-n-300 rounded-full bar-fill" style={{ width: `${c.before}%` }} />
+                  </div>
+                  <span className="text-[10px] text-n-600 w-6 text-right shrink-0">{c.before}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] text-n-500 w-12 shrink-0">Después</span>
+                  <div className="flex-1 h-1.5 bg-n-100 rounded-full overflow-hidden">
+                    <div className="h-full bg-h-500 rounded-full bar-fill" style={{ width: `${c.after}%` }} />
+                  </div>
+                  <span className="text-[10px] text-h-600 font-semibold w-6 text-right shrink-0">{c.after}</span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="bg-white rounded-2xl shadow-4dp p-5">
+        <p className="text-[13px] font-semibold text-n-950 mb-1">Correlación con retención</p>
+        <p className="text-[11px] text-n-600 mb-4">Empleados con plan activo tienen 17pp más de retención proyectada</p>
+        <div className="grid grid-cols-2 gap-6">
+          {[
+            { label: 'Con plan activo', value: 91, color: 'bg-h-500', textColor: 'text-h-600' },
+            { label: 'Sin plan activo', value: 74, color: 'bg-n-300', textColor: 'text-n-500' },
+          ].map(b => (
+            <div key={b.label} className="flex flex-col items-center gap-2">
+              <p className={`text-4xl font-bold ${b.textColor}`}>{b.value}%</p>
+              <div className="w-full h-2 bg-n-100 rounded-full overflow-hidden">
+                <div className={`h-full rounded-full ${b.color} bar-fill`} style={{ width: `${b.value}%` }} />
+              </div>
+              <p className="text-[12px] text-n-600">{b.label}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+
+
 function HRAdminTab() {
   const [selectedPath, setSelectedPath] = useState('sd')
+  const [section, setSection] = useState('paths') // 'paths' | 'competencias' | 'niveles'
+
+  const SUB_TABS = [
+    { id: 'paths',       label: '🗺️ Career Paths' },
+    { id: 'salud',       label: '💚 Salud Org.' },
+    { id: 'headcount',    label: '🔍 Headcount' },
+    { id: 'visibilidad',  label: '🔒 Visibilidad' },
+    { id: 'metricas',     label: '📈 Métricas' },
+  ]
 
   return (
     <div className="flex flex-col gap-5">
@@ -1547,130 +2331,105 @@ function HRAdminTab() {
         ))}
       </div>
 
-      <div className="flex gap-5">
-        {/* LEFT: career paths list */}
-        <div style={{ width: 240 }}>
-          <div className="bg-white rounded-2xl shadow-4dp">
-            <div className="px-5 py-3.5 border-b border-n-100 flex items-center justify-between">
-              <span className="text-[13px] font-semibold text-n-950">Rutas de carrera</span>
-              <button className="h-8 px-3 bg-h-500 hover:bg-h-600 text-white rounded-lg text-[12px] font-semibold transition-colors">+ Nueva</button>
-            </div>
-            <div className="p-3 flex flex-col gap-1">
-              {CAREER_PATHS.map(group => (
-                <div key={group.section}>
-                  <p className="text-[10px] font-semibold text-n-600 uppercase tracking-widest px-2 py-1.5">{group.section}</p>
-                  {group.items.map(item => (
-                    <button
-                      key={item.id}
-                      onClick={() => setSelectedPath(item.id)}
-                      className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left transition-colors ${selectedPath === item.id ? 'bg-p-50' : 'hover:bg-n-50'}`}
-                    >
-                      <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: item.dot }} />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[12px] font-semibold text-n-950 truncate">{item.label}</p>
-                        <p className="text-[10px] text-n-600">{item.level}</p>
-                      </div>
-                      <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-n-100 text-n-600 shrink-0">{item.count}</span>
-                    </button>
-                  ))}
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* RIGHT: role editor + progression */}
-        <div className="flex-1 flex flex-col gap-4 min-w-0">
-          {/* Role editor */}
-          <div className="bg-white rounded-2xl shadow-4dp">
-            <div className="px-6 py-4 border-b border-n-100 flex items-center justify-between">
-              <div>
-                <p className="text-[13px] font-semibold text-n-950">Senior Designer</p>
-                <p className="text-[11px] text-n-600">Diseño · Nivel 3 · 8 empleados</p>
-              </div>
-              <div className="flex gap-2">
-                <button className="h-9 px-4 bg-white border border-n-200 shadow-4dp hover:shadow-8dp text-n-950 rounded-lg text-[13px] font-semibold transition-shadow">Editar ruta</button>
-                <button className="h-9 px-4 bg-h-500 hover:bg-h-600 text-white rounded-lg text-[13px] font-semibold transition-colors">Guardar cambios</button>
-              </div>
-            </div>
-            <div className="p-5 flex flex-col gap-5">
-              <div>
-                <p className="text-[10px] font-semibold text-n-600 uppercase tracking-widest mb-3">Skills y competencias requeridas</p>
-                <div className="flex flex-wrap gap-2">
-                  {REQUIRED_SKILLS.map(s => (
-                    <div key={s} className="flex items-center gap-1 bg-h-50 text-h-800 text-[12px] font-medium px-2.5 py-1 rounded-lg">
-                      {s}
-                      <button className="text-h-400 hover:text-r-600 ml-1 leading-none">×</button>
-                    </div>
-                  ))}
-                  <button className="flex items-center gap-1 bg-n-100 text-n-600 text-[12px] font-medium px-2.5 py-1 rounded-lg hover:bg-n-200 transition-colors">+ Agregar skill</button>
-                </div>
-              </div>
-              <div>
-                <p className="text-[10px] font-semibold text-n-600 uppercase tracking-widest mb-3">Requisitos del rol</p>
-                <div className="grid grid-cols-3 gap-3">
-                  {[['Experiencia mínima', '3+ años'], ['Umbral de desempeño', '≥ 80%'], ['Aprobación requerida', 'Manager + HR']].map(([label, val]) => (
-                    <div key={label}>
-                      <p className="text-[11px] text-n-600 mb-1">{label}</p>
-                      <input className="input-humand" defaultValue={val} />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Progression table */}
-          <div className="bg-white rounded-2xl shadow-4dp">
-            <div className="px-6 py-4 border-b border-n-100 flex items-center justify-between">
-              <div>
-                <p className="text-[13px] font-semibold text-n-950">Progresión del equipo</p>
-                <p className="text-[11px] text-n-600">Con objetivo: Senior Designer</p>
-              </div>
-              <button className="text-[12px] text-h-600 font-medium hover:underline">Exportar →</button>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-n-100">
-                    {['Empleado', 'Rol actual', 'Progreso', 'Estado', 'Est. listo', ''].map(h => (
-                      <th key={h} className="px-5 py-3 text-left text-[10px] font-semibold text-n-600 uppercase tracking-widest">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {PROGRESSION.map((p, i) => (
-                    <tr key={i} className="border-b border-n-50 hover:bg-n-50 transition-colors">
-                      <td className="px-5 py-3">
-                        <div className="flex items-center gap-2.5">
-                          <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${p.color}`}>{p.initials}</div>
-                          <span className="text-[13px] font-medium text-n-950">{p.name}</span>
-                        </div>
-                      </td>
-                      <td className="px-5 py-3 text-[12px] text-n-600">{p.role}</td>
-                      <td className="px-5 py-3">
-                        <div className="flex items-center gap-2">
-                          <div className="w-20 h-1.5 bg-n-100 rounded-full overflow-hidden">
-                            <div className="h-full bg-h-500 rounded-full bar-fill" style={{ width: `${p.pct}%` }} />
-                          </div>
-                          <span className="text-[11px] text-n-600">{p.pct}%</span>
-                        </div>
-                      </td>
-                      <td className="px-5 py-3">
-                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${p.statusClass}`}>{p.status}</span>
-                      </td>
-                      <td className="px-5 py-3 text-[12px] text-n-600">{p.est}</td>
-                      <td className="px-5 py-3">
-                        <button className="text-[12px] text-h-600 font-medium hover:underline">Ver</button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
+      {/* Sub-navigation */}
+      <div className="flex items-center gap-1 bg-n-100 p-1 rounded-xl overflow-x-auto scrollbar-thin">
+        {SUB_TABS.map(t => (
+          <button key={t.id} onClick={() => setSection(t.id)}
+            className={`h-8 px-3 rounded-lg text-[12px] whitespace-nowrap transition-all ${section === t.id ? 'bg-white shadow-4dp text-n-950 font-semibold' : 'text-n-600 hover:text-n-950'}`}>
+            {t.label}
+          </button>
+        ))}
       </div>
+
+      {/* ── Career Paths ── */}
+      {section === 'paths' && (
+        <>
+        <div className="flex gap-5">
+          <div style={{ width: 240 }}>
+            <div className="bg-white rounded-2xl shadow-4dp">
+              <div className="px-5 py-3.5 border-b border-n-100 flex items-center justify-between">
+                <span className="text-[13px] font-semibold text-n-950">Career Paths</span>
+                <button className="h-8 px-3 bg-h-500 hover:bg-h-600 text-white rounded-lg text-[12px] font-semibold transition-colors">+ New</button>
+              </div>
+              <div className="p-3 flex flex-col gap-1">
+                {CAREER_PATHS.map(group => (
+                  <div key={group.section}>
+                    <p className="text-[10px] font-semibold text-n-600 uppercase tracking-widest px-2 py-1.5">{group.section}</p>
+                    {group.items.map(item => (
+                      <button key={item.id} onClick={() => setSelectedPath(item.id)}
+                        className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left transition-colors ${selectedPath === item.id ? 'bg-p-50' : 'hover:bg-n-50'}`}>
+                        <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: item.dot }} />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[12px] font-semibold text-n-950 truncate">{item.label}</p>
+                          <p className="text-[10px] text-n-600">{item.level}</p>
+                        </div>
+                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-n-100 text-n-600 shrink-0">{item.count}</span>
+                      </button>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className="flex-1 flex flex-col gap-4 min-w-0">
+            <div className="bg-white rounded-2xl shadow-4dp">
+              <div className="px-6 py-4 border-b border-n-100 flex items-center justify-between">
+                <div>
+                  <p className="text-[13px] font-semibold text-n-950">Senior Designer</p>
+                  <p className="text-[11px] text-n-600">Design · Level 3 · 8 employees</p>
+                </div>
+                <div className="flex gap-2">
+                  <button className="h-9 px-4 bg-white border border-n-200 shadow-4dp hover:shadow-8dp text-n-950 rounded-lg text-[13px] font-semibold transition-shadow">Edit path</button>
+                  <button className="h-9 px-4 bg-h-500 hover:bg-h-600 text-white rounded-lg text-[13px] font-semibold transition-colors">Save changes</button>
+                </div>
+              </div>
+              <div className="p-5 flex flex-col gap-5">
+                <div>
+                  <p className="text-[10px] font-semibold text-n-600 uppercase tracking-widest mb-3">Required Skills &amp; Competencies</p>
+                  <div className="flex flex-wrap gap-2">
+                    {['Visual Design','Prototyping','UX Research','Figma Advanced','Stakeholder Mgmt','Design Systems'].map(s => (
+                      <div key={s} className="flex items-center gap-1 bg-h-50 text-h-800 text-[12px] font-medium px-2.5 py-1 rounded-lg">
+                        {s}<button className="text-h-400 hover:text-r-600 ml-1 leading-none">×</button>
+                      </div>
+                    ))}
+                    <button className="flex items-center gap-1 bg-n-100 text-n-600 text-[12px] font-medium px-2.5 py-1 rounded-lg hover:bg-n-200 transition-colors">+ Add skill</button>
+                  </div>
+                </div>
+                <div>
+                  <p className="text-[10px] font-semibold text-n-600 uppercase tracking-widest mb-3">Role Requirements</p>
+                  <div className="grid grid-cols-3 gap-3">
+                    {[['Min. experience','3+ years'],['Perf. score threshold','≥ 80%'],['Approval required','Manager + HR']].map(([label, val]) => (
+                      <div key={label}>
+                        <p className="text-[11px] text-n-600 mb-1">{label}</p>
+                        <input className="input-humand" defaultValue={val} />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <CompetencyBuilder />
+        </>
+      )}
+
+
+
+
+
+      {/* ── Salud Organizacional ── */}
+      {section === 'salud' && <SaludOrganizacional />}
+
+      {/* ── Headcount Planning ── */}
+      {section === 'headcount' && <HeadcountPlanning />}
+
+      {/* ── Configuración de Visibilidad ── */}
+      {section === 'visibilidad' && <ConfigVisibilidad />}
+
+      {/* ── Métricas de Impacto ── */}
+      {section === 'metricas' && <MetricasImpacto />}
     </div>
   )
 }
