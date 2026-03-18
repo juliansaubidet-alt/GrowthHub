@@ -114,7 +114,7 @@ export default function App() {
 
   return (
     <AppContext.Provider value={ctx}>
-      <div className="flex h-screen bg-slate-50 overflow-hidden font-sans">
+      <div className="flex h-screen bg-[#050914] overflow-hidden font-sans">
         <Sidebar
           activeView={activeView}
           setActiveView={setActiveView}
