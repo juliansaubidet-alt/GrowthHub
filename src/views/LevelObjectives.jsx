@@ -20,11 +20,19 @@ export default function LevelObjectives() {
   const [draft, setDraft]           = useState({ area: 'Técnico', text: '' })
   const [editingObj, setEditingObj] = useState(null)
   const [editDraft, setEditDraft]   = useState({ area: 'Técnico', text: '' })
-  const [roleOpen, setRoleOpen]     = useState(null)
+  const [trackOpen, setTrackOpen]   = useState(false)
 
-  const setRole = (level, role) => {
-    setLevelObjectives(p => p.map(l => l.level === level ? { ...l, role } : l))
-    setRoleOpen(null)
+  // Detecta el track activo comparando el primer rol del grupo con L1
+  const activeTrack = ROLE_OPTIONS.find(g => g.roles[0] === levelObjectives[0]?.role)?.group || null
+
+  const applyTrack = (group) => {
+    const { roles } = ROLE_OPTIONS.find(g => g.group === group)
+    setLevelObjectives(p => p.map((l, i) => ({ ...l, role: roles[i] ?? roles[roles.length - 1] })))
+    setTrackOpen(false)
+  }
+  const clearTrack = () => {
+    setLevelObjectives(p => p.map(l => ({ ...l, role: '' })))
+    setTrackOpen(false)
   }
   const addObj = (level) => {
     if (!draft.text.trim()) return
@@ -49,48 +57,49 @@ export default function LevelObjectives() {
   return (
     <div className="flex flex-col gap-4">
 
-      {/* ── Roles por nivel — fuera de las cajas ── */}
+      {/* ── Un solo desplegable de rol — fuera de las cajas ── */}
       <div className="bg-white rounded-2xl shadow-4dp p-5">
-        <p className="text-[11px] font-semibold text-n-600 uppercase tracking-widest mb-3">Rol asociado a cada nivel</p>
-        <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
-          {levelObjectives.map(lvl => (
-            <div key={lvl.level} className="relative">
-              <div className="flex items-center gap-2 mb-1.5">
-                <span className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-white shrink-0"
-                  style={{ backgroundColor: LEVEL_COLORS[lvl.level] }}>{lvl.level}</span>
-                <span className="text-[11px] font-semibold text-n-800">{lvl.title}</span>
-              </div>
-              <button
-                onClick={() => setRoleOpen(o => o === lvl.level ? null : lvl.level)}
-                className={`w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg border text-[12px] transition-all ${lvl.role ? 'bg-h-50 border-h-200 text-h-800 font-semibold' : 'bg-n-50 border-n-200 text-n-500 hover:border-n-300'}`}
-              >
-                <span className="truncate">{lvl.role || 'Asignar rol…'}</span>
-                <ChevronDown size={12} className={`shrink-0 transition-transform ${roleOpen === lvl.level ? 'rotate-180' : ''}`} />
-              </button>
+        <p className="text-[11px] font-semibold text-n-600 uppercase tracking-widest mb-3">Rol del framework</p>
+        <div className="flex items-start gap-4">
+          <div className="relative flex-1 max-w-xs">
+            <button
+              onClick={() => setTrackOpen(o => !o)}
+              className={`w-full flex items-center justify-between gap-2 px-4 py-2.5 rounded-xl border text-[13px] transition-all ${activeTrack ? 'bg-h-50 border-h-200 text-h-800 font-semibold' : 'bg-n-50 border-n-200 text-n-600 hover:border-n-300'}`}
+            >
+              <span>{activeTrack ? `Área: ${activeTrack}` : 'Asignar rol…'}</span>
+              <ChevronDown size={14} className={`shrink-0 transition-transform ${trackOpen ? 'rotate-180' : ''}`} />
+            </button>
 
-              {roleOpen === lvl.level && (
-                <div className="absolute left-0 right-0 top-full mt-1 bg-white rounded-xl shadow-8dp border border-n-200 z-30 max-h-56 overflow-y-auto animate-fade-in">
-                  {lvl.role && (
-                    <button onClick={() => setRole(lvl.level, '')}
-                      className="w-full px-3 py-2 text-left text-[11px] text-r-500 hover:bg-r-50 transition-colors border-b border-n-100">
-                      × Quitar rol
-                    </button>
-                  )}
-                  {ROLE_OPTIONS.map(group => (
-                    <div key={group.group}>
-                      <p className="px-3 py-1.5 text-[9px] font-bold text-n-500 uppercase tracking-widest bg-n-50 sticky top-0">{group.group}</p>
-                      {group.roles.map(r => (
-                        <button key={r} onClick={() => setRole(lvl.level, r)}
-                          className={`w-full px-3 py-2 text-left text-[12px] transition-colors hover:bg-h-50 hover:text-h-800 ${lvl.role === r ? 'bg-h-50 text-h-700 font-semibold' : 'text-n-800'}`}>
-                          {r}
-                        </button>
-                      ))}
-                    </div>
-                  ))}
+            {trackOpen && (
+              <div className="absolute left-0 right-0 top-full mt-1 bg-white rounded-xl shadow-8dp border border-n-200 z-30 overflow-hidden animate-fade-in">
+                {activeTrack && (
+                  <button onClick={clearTrack}
+                    className="w-full px-4 py-2.5 text-left text-[12px] text-r-500 hover:bg-r-50 transition-colors border-b border-n-100">
+                    × Quitar rol
+                  </button>
+                )}
+                {ROLE_OPTIONS.map(g => (
+                  <button key={g.group} onClick={() => applyTrack(g.group)}
+                    className={`w-full px-4 py-2.5 text-left text-[13px] transition-colors hover:bg-h-50 hover:text-h-800 ${activeTrack === g.group ? 'bg-h-50 text-h-700 font-semibold' : 'text-n-800'}`}>
+                    {g.group}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Preview de roles asignados */}
+          {activeTrack && (
+            <div className="flex items-center gap-2 flex-wrap">
+              {levelObjectives.map(lvl => (
+                <div key={lvl.level} className="flex items-center gap-1.5 bg-n-50 border border-n-200 px-2.5 py-1 rounded-lg">
+                  <span className="w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold text-white shrink-0"
+                    style={{ backgroundColor: LEVEL_COLORS[lvl.level] }}>{lvl.level}</span>
+                  <span className="text-[11px] text-n-800 font-medium">{lvl.role}</span>
                 </div>
-              )}
+              ))}
             </div>
-          ))}
+          )}
         </div>
       </div>
 
