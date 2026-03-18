@@ -1518,9 +1518,8 @@ function HRAdminTab() {
   const [section, setSection] = useState('paths') // 'paths' | 'competencias' | 'niveles'
 
   const SUB_TABS = [
-    { id: 'paths',        label: '🗺️ Career Paths' },
-    { id: 'competencias', label: '🧩 Competencias' },
-    { id: 'salud',        label: '💚 Salud Org.' },
+    { id: 'paths',       label: '🗺️ Career Paths' },
+    { id: 'salud',       label: '💚 Salud Org.' },
     { id: 'headcount',    label: '🔍 Headcount' },
     { id: 'visibilidad',  label: '🔒 Visibilidad' },
     { id: 'metricas',     label: '📈 Métricas' },
@@ -1553,6 +1552,7 @@ function HRAdminTab() {
 
       {/* ── Career Paths ── */}
       {section === 'paths' && (
+        <>
         <div className="flex gap-5">
           <div style={{ width: 240 }}>
             <div className="bg-white rounded-2xl shadow-4dp">
@@ -1619,10 +1619,10 @@ function HRAdminTab() {
             </div>
           </div>
         </div>
-      )}
 
-      {/* ── Competencias ── */}
-      {section === 'competencias' && <CompetencyBuilder />}
+        <CompetencyBuilder />
+        </>
+      )}
 
 
 
