@@ -164,6 +164,7 @@ export default function App() {
   const [catalog, setCatalog]                 = useState(() => load('cp_catalog',      defaultCatalog))
   const [competencies, setCompetencies]       = useState(() => load('cp_competencies', defaultCompetencies))
   const [levelObjectives, setLevelObjectives] = useState(() => load('cp_level_objs',   defaultLevelObjectives))
+  const [resolvedAlerts, setResolvedAlerts]   = useState(() => load('cp_resolved_alerts', []))
 
   useEffect(() => { localStorage.setItem('cp_profile',    JSON.stringify(profile)) },    [profile])
   useEffect(() => { localStorage.setItem('cp_skills',     JSON.stringify(skills)) },     [skills])
@@ -171,7 +172,8 @@ export default function App() {
   useEffect(() => { localStorage.setItem('cp_actions',      JSON.stringify(actionItems)) },    [actionItems])
   useEffect(() => { localStorage.setItem('cp_catalog',      JSON.stringify(catalog)) },      [catalog])
   useEffect(() => { localStorage.setItem('cp_competencies', JSON.stringify(competencies)) },  [competencies])
-  useEffect(() => { localStorage.setItem('cp_level_objs',   JSON.stringify(levelObjectives)) },[levelObjectives])
+  useEffect(() => { localStorage.setItem('cp_level_objs',     JSON.stringify(levelObjectives)) },  [levelObjectives])
+  useEffect(() => { localStorage.setItem('cp_resolved_alerts', JSON.stringify(resolvedAlerts)) },  [resolvedAlerts])
   useEffect(() => {
     if (leaderRole) sessionStorage.setItem('cp_role', 'leader')
     else sessionStorage.removeItem('cp_role')
@@ -185,6 +187,7 @@ export default function App() {
     catalog, setCatalog,
     competencies, setCompetencies,
     levelObjectives, setLevelObjectives,
+    resolvedAlerts, setResolvedAlerts,
     leaderRole, setLeaderRole,
   }
 

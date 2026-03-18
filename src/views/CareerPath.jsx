@@ -309,11 +309,62 @@ const ANA_GOALS = [
 ]
 
 function ManagerTab() {
-  const [selected, setSelected] = useState(0)
-  const [feedback, setFeedback] = useState('')
+  const { resolvedAlerts, setResolvedAlerts } = useApp()
+  const [selected, setSelected]   = useState(0)
+  const [feedback, setFeedback]   = useState('')
+  const [seenAlerts, setSeenAlerts] = useState(() => {
+    try { return JSON.parse(sessionStorage.getItem('mgr_seen_alerts') || '[]') } catch { return [] }
+  })
+
+  const allAlerts    = computeRiskAlerts()
+  const pendingAlerts = allAlerts.filter(a => !resolvedAlerts.includes(a.id) && !seenAlerts.includes(a.id))
+  const resolveOne   = (id) => {
+    const next = [...seenAlerts, id]
+    setSeenAlerts(next)
+    sessionStorage.setItem('mgr_seen_alerts', JSON.stringify(next))
+  }
+  const resolveAll   = () => {
+    const ids = pendingAlerts.map(a => a.id)
+    const next = [...seenAlerts, ...ids]
+    setSeenAlerts(next)
+    sessionStorage.setItem('mgr_seen_alerts', JSON.stringify(next))
+  }
 
   return (
-    <div className="flex gap-5">
+    <div className="flex flex-col gap-5">
+
+      {/* ── Notificaciones de riesgo para el manager ── */}
+      {pendingAlerts.length > 0 && (
+        <div className="bg-white rounded-2xl shadow-4dp overflow-hidden border border-r-100">
+          <div className="px-5 py-3.5 bg-r-50 border-b border-r-100 flex items-center gap-2">
+            <span className="text-base">🔔</span>
+            <p className="text-[13px] font-semibold text-r-700 flex-1">
+              {pendingAlerts.length === 1 ? '1 alerta requiere tu atención' : `${pendingAlerts.length} alertas requieren tu atención`}
+            </p>
+            <button onClick={resolveAll} className="text-[11px] text-r-500 hover:text-r-700 font-semibold transition">Marcar todas como vistas</button>
+          </div>
+          <div className="divide-y divide-n-50">
+            {pendingAlerts.map(alert => {
+              const st = SEVERITY_STYLE[alert.severity]
+              return (
+                <div key={alert.id} className={`flex items-start gap-3 px-5 py-3.5 ${st.bar}`}>
+                  <span className="text-lg shrink-0">{alert.icon}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${st.badge}`}>{alert.severity.toUpperCase()}</span>
+                      <span className="text-[12px] font-semibold text-n-950">{alert.type} — {alert.team}</span>
+                    </div>
+                    <p className="text-[12px] text-n-600">{alert.message}</p>
+                  </div>
+                  <button onClick={() => resolveOne(alert.id)} className="text-[11px] text-n-400 hover:text-n-700 shrink-0 transition">Vista ×</button>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      <div className="flex gap-5">
       {/* LEFT: team list */}
       <div style={{ width: 280 }}>
         <div className="bg-white rounded-2xl shadow-4dp">
@@ -432,6 +483,7 @@ function ManagerTab() {
           </div>
         )}
       </div>
+    </div>
     </div>
   )
 }
@@ -823,7 +875,7 @@ function BibliotecaCompetencias() {
 /* ─── SALUD ORGANIZACIONAL ───────────────────────────────────────── */
 const TEAM_HEALTH = [
   {
-    team: 'Product Design', engagement: 82, planActivo: 75, retencion: 91, riesgo: 'bajo',
+    team: 'Product Design', engagement: 82, planActivo: 75, retencion: 91, riesgo: 'bajo', manager: 'Valentina Cruz',
     members: [
       { name: 'Sofia Carro',    initials: 'SC', color: 'bg-h-100 text-h-700', role: 'Mid Designer',    plan: { active: true,  title: 'Avanzar a Senior Designer',     progress: 68, nextLevel: 'Senior' } },
       { name: 'Ana Martínez',   initials: 'AM', color: 'bg-p-100 text-p-700', role: 'Senior Designer', plan: { active: true,  title: 'Avanzar a Lead Designer',       progress: 45, nextLevel: 'Lead'   } },
@@ -832,7 +884,7 @@ const TEAM_HEALTH = [
     ],
   },
   {
-    team: 'Frontend Engineering', engagement: 74, planActivo: 60, retencion: 84, riesgo: 'medio',
+    team: 'Frontend Engineering', engagement: 74, planActivo: 60, retencion: 84, riesgo: 'medio', manager: 'Martina Sol',
     members: [
       { name: 'Carlos Ruiz',    initials: 'CR', color: 'bg-h-100 text-h-700', role: 'Mid Frontend',    plan: { active: true,  title: 'Avanzar a Senior Frontend',     progress: 55, nextLevel: 'Senior' } },
       { name: 'Martina Sol',    initials: 'MS', color: 'bg-t-100 text-t-700', role: 'Senior Frontend', plan: { active: true,  title: 'Especialización en Arquitectura', progress: 72, nextLevel: 'Lead'  } },
@@ -842,7 +894,7 @@ const TEAM_HEALTH = [
     ],
   },
   {
-    team: 'Backend Engineering', engagement: 68, planActivo: 45, retencion: 78, riesgo: 'alto',
+    team: 'Backend Engineering', engagement: 68, planActivo: 45, retencion: 78, riesgo: 'alto', manager: 'Fernanda Ortiz',
     members: [
       { name: 'Rodrigo Blanco', initials: 'RB', color: 'bg-n-200 text-n-700', role: 'Mid Backend',     plan: { active: false, title: 'Sin plan asignado',             progress: 0,  nextLevel: '—'      } },
       { name: 'Fernanda Ortiz', initials: 'FO', color: 'bg-h-100 text-h-700', role: 'Senior Backend',  plan: { active: true,  title: 'Tech Lead Backend',             progress: 40, nextLevel: 'Lead'   } },
@@ -851,7 +903,7 @@ const TEAM_HEALTH = [
     ],
   },
   {
-    team: 'Data & Analytics', engagement: 79, planActivo: 70, retencion: 88, riesgo: 'bajo',
+    team: 'Data & Analytics', engagement: 79, planActivo: 70, retencion: 88, riesgo: 'bajo', manager: 'Matías Leal',
     members: [
       { name: 'Valentina Cruz', initials: 'VC', color: 'bg-t-100 text-t-700', role: 'Data Analyst',    plan: { active: true,  title: 'Avanzar a Senior Analyst',      progress: 65, nextLevel: 'Senior' } },
       { name: 'Matías Leal',    initials: 'ML', color: 'bg-h-100 text-h-700', role: 'Senior Analyst',  plan: { active: true,  title: 'Data Science Lead',             progress: 50, nextLevel: 'Lead'   } },
@@ -859,7 +911,7 @@ const TEAM_HEALTH = [
     ],
   },
   {
-    team: 'People & Culture', engagement: 88, planActivo: 90, retencion: 94, riesgo: 'bajo',
+    team: 'People & Culture', engagement: 88, planActivo: 90, retencion: 94, riesgo: 'bajo', manager: 'Sebastián Gil',
     members: [
       { name: 'Laura Romero',   initials: 'LR', color: 'bg-p-100 text-p-700', role: 'HR Specialist',   plan: { active: true,  title: 'Avanzar a HR Business Partner', progress: 80, nextLevel: 'Senior' } },
       { name: 'Sebastián Gil',  initials: 'SG', color: 'bg-h-100 text-h-700', role: 'Talent Manager',  plan: { active: true,  title: 'Head of People',                progress: 55, nextLevel: 'Lead'   } },
@@ -867,7 +919,7 @@ const TEAM_HEALTH = [
     ],
   },
   {
-    team: 'Growth Marketing', engagement: 65, planActivo: 40, retencion: 75, riesgo: 'alto',
+    team: 'Growth Marketing', engagement: 65, planActivo: 40, retencion: 75, riesgo: 'alto', manager: 'Renata Lagos',
     members: [
       { name: 'Ignacio Funes',  initials: 'IF', color: 'bg-n-200 text-n-700', role: 'Growth Analyst',  plan: { active: false, title: 'Sin plan asignado',             progress: 0,  nextLevel: '—'      } },
       { name: 'Renata Lagos',   initials: 'RL', color: 'bg-y-100 text-y-700', role: 'Growth Manager',  plan: { active: true,  title: 'Head of Growth',                progress: 35, nextLevel: 'Lead'   } },
@@ -878,15 +930,103 @@ const TEAM_HEALTH = [
   },
 ]
 const RIESGO_BADGE = { bajo: 'bg-g-50 text-g-800', medio: 'bg-y-50 text-y-700', alto: 'bg-r-50 text-r-600' }
+const ENG_THRESHOLD = 70   // engagement < 70 = bajo
+const PLAN_THRESHOLD = 0.5 // > 50% sin plan = baja actividad
+
+function computeRiskAlerts() {
+  const alerts = []
+  TEAM_HEALTH.forEach(t => {
+    const sinPlan = t.members.filter(m => !m.plan.active).length
+    const sinPlanPct = sinPlan / t.members.length
+    if (t.engagement < ENG_THRESHOLD)
+      alerts.push({ id: `eng-${t.team}`, team: t.team, manager: t.manager, severity: t.engagement < 60 ? 'alto' : 'medio',
+        type: 'Engagement bajo', message: `Engagement del equipo en ${t.engagement}% (umbral: ${ENG_THRESHOLD}%)`, icon: '📉' })
+    if (sinPlanPct > PLAN_THRESHOLD)
+      alerts.push({ id: `plan-${t.team}`, team: t.team, manager: t.manager, severity: sinPlanPct > 0.7 ? 'alto' : 'medio',
+        type: 'Baja actividad', message: `${sinPlan} de ${t.members.length} integrantes sin plan activo`, icon: '⚠️' })
+    if (t.riesgo === 'alto' && t.engagement >= ENG_THRESHOLD && sinPlanPct <= PLAN_THRESHOLD)
+      alerts.push({ id: `riesgo-${t.team}`, team: t.team, manager: t.manager, severity: 'alto',
+        type: 'Equipo en riesgo', message: `Retención proyectada en ${t.retencion}% — requiere atención`, icon: '🔴' })
+  })
+  return alerts
+}
+
+const SEVERITY_STYLE = {
+  alto:  { bar: 'border-l-4 border-r-600 bg-r-50',  badge: 'bg-r-50 text-r-600',  btn: 'bg-r-600 hover:bg-r-700' },
+  medio: { bar: 'border-l-4 border-y-400 bg-y-50',  badge: 'bg-y-50 text-y-700',  btn: 'bg-y-500 hover:bg-y-600' },
+}
 
 function SaludOrganizacional() {
+  const { resolvedAlerts, setResolvedAlerts } = useApp()
   const [expanded, setExpanded] = useState(null)
+  const [sent, setSent] = useState({})          // { alertId: true } = notificación enviada
   const toggle = (team) => setExpanded(e => e === team ? null : team)
   const avg = (key) => Math.round(TEAM_HEALTH.reduce((a, t) => a + t[key], 0) / TEAM_HEALTH.length)
   const riesgoAlto = TEAM_HEALTH.filter(t => t.riesgo === 'alto').length
 
+  const allAlerts   = computeRiskAlerts()
+  const activeAlerts = allAlerts.filter(a => !resolvedAlerts.includes(a.id))
+
+  const sendNotification = (alert) => {
+    setSent(s => ({ ...s, [alert.id]: true }))
+    // persiste en resolvedAlerts después de 3s para simular "enviada y procesada"
+    setTimeout(() => setResolvedAlerts(r => [...r, alert.id]), 3000)
+  }
+  const resolveAlert = (id) => setResolvedAlerts(r => [...r, id])
+
   return (
     <div className="flex flex-col gap-5">
+
+      {/* ── Alertas de riesgo automáticas ── */}
+      {activeAlerts.length > 0 && (
+        <div className="bg-white rounded-2xl shadow-4dp overflow-hidden">
+          <div className="px-5 py-3.5 border-b border-n-100 flex items-center gap-2">
+            <span className="text-base">🚨</span>
+            <p className="text-[13px] font-semibold text-n-950 flex-1">Alertas de riesgo detectadas</p>
+            <span className="text-[11px] font-bold bg-r-50 text-r-600 px-2 py-0.5 rounded-full">{activeAlerts.length} activas</span>
+          </div>
+          <div className="divide-y divide-n-50">
+            {activeAlerts.map(alert => {
+              const st = SEVERITY_STYLE[alert.severity]
+              const wasSent = sent[alert.id]
+              return (
+                <div key={alert.id} className={`flex items-start gap-4 px-5 py-4 ${st.bar}`}>
+                  <span className="text-xl shrink-0 mt-0.5">{alert.icon}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${st.badge}`}>{alert.severity.toUpperCase()}</span>
+                      <span className="text-[12px] font-semibold text-n-950">{alert.type} — {alert.team}</span>
+                    </div>
+                    <p className="text-[12px] text-n-600">{alert.message}</p>
+                    <p className="text-[11px] text-n-500 mt-0.5">Manager: <span className="font-semibold text-n-800">{alert.manager}</span></p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {wasSent ? (
+                      <span className="flex items-center gap-1 text-[11px] font-semibold text-g-700 bg-g-50 px-3 py-1.5 rounded-lg">
+                        ✓ Notificación enviada
+                      </span>
+                    ) : (
+                      <button onClick={() => sendNotification(alert)}
+                        className={`h-8 px-3 text-white text-[12px] font-semibold rounded-lg transition ${st.btn}`}>
+                        Notificar a {alert.manager.split(' ')[0]}
+                      </button>
+                    )}
+                    <button onClick={() => resolveAlert(alert.id)} className="text-n-400 hover:text-n-700 text-xs transition px-2">Ignorar</button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {activeAlerts.length === 0 && (
+        <div className="flex items-center gap-3 px-5 py-4 bg-g-50 border border-g-200 rounded-2xl">
+          <span className="text-xl">✅</span>
+          <p className="text-[13px] font-semibold text-g-800">Sin alertas activas — todos los equipos dentro de los umbrales normales</p>
+        </div>
+      )}
+
       {/* KPIs */}
       <div className="grid grid-cols-4 gap-4">
         {[
