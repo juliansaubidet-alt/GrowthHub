@@ -1,5 +1,6 @@
 import { useState, useEffect, createContext, useContext } from 'react'
 import Sidebar from './components/Sidebar'
+import Topbar from './components/Topbar'
 import Dashboard from './views/Dashboard'
 import Onboarding from './views/Onboarding'
 import Objectives from './views/Objectives'
@@ -71,24 +72,31 @@ function load(key, fallback) {
   } catch { return fallback }
 }
 
-// Leader password (in a real app this would be server-side)
 export const LEADER_PASSWORD = 'lider2026'
 
-export default function App() {
-  const [activeView, setActiveView]     = useState('dashboard')
-  const [sidebarOpen, setSidebarOpen]   = useState(true)
-  const [leaderRole, setLeaderRole]     = useState(() => sessionStorage.getItem('cp_role') === 'leader')
-  const [profile, setProfile]           = useState(() => load('cp_profile',    defaultProfile))
-  const [skills, setSkills]             = useState(() => load('cp_skills',     defaultSkills))
-  const [objectives, setObjectives]     = useState(() => load('cp_objectives', defaultObjectives))
-  const [actionItems, setActionItems]   = useState(() => load('cp_actions',    defaultActionItems))
-  const [catalog, setCatalog]           = useState(() => load('cp_catalog',    defaultCatalog))
+const VIEW_LABELS = {
+  dashboard:  'Dashboard',
+  onboarding: 'Mi Perfil',
+  objectives: 'Objetivos OKR',
+  skillgap:   'Skill Gap',
+  actionplan: 'Plan de Acción',
+  admin:      'Admin',
+}
 
-  useEffect(() => { localStorage.setItem('cp_profile',    JSON.stringify(profile)) },      [profile])
-  useEffect(() => { localStorage.setItem('cp_skills',     JSON.stringify(skills)) },       [skills])
-  useEffect(() => { localStorage.setItem('cp_objectives', JSON.stringify(objectives)) },   [objectives])
-  useEffect(() => { localStorage.setItem('cp_actions',    JSON.stringify(actionItems)) },  [actionItems])
-  useEffect(() => { localStorage.setItem('cp_catalog',    JSON.stringify(catalog)) },      [catalog])
+export default function App() {
+  const [activeView, setActiveView]   = useState('dashboard')
+  const [leaderRole, setLeaderRole]   = useState(() => sessionStorage.getItem('cp_role') === 'leader')
+  const [profile, setProfile]         = useState(() => load('cp_profile',    defaultProfile))
+  const [skills, setSkills]           = useState(() => load('cp_skills',     defaultSkills))
+  const [objectives, setObjectives]   = useState(() => load('cp_objectives', defaultObjectives))
+  const [actionItems, setActionItems] = useState(() => load('cp_actions',    defaultActionItems))
+  const [catalog, setCatalog]         = useState(() => load('cp_catalog',    defaultCatalog))
+
+  useEffect(() => { localStorage.setItem('cp_profile',    JSON.stringify(profile)) },    [profile])
+  useEffect(() => { localStorage.setItem('cp_skills',     JSON.stringify(skills)) },     [skills])
+  useEffect(() => { localStorage.setItem('cp_objectives', JSON.stringify(objectives)) }, [objectives])
+  useEffect(() => { localStorage.setItem('cp_actions',    JSON.stringify(actionItems)) },[actionItems])
+  useEffect(() => { localStorage.setItem('cp_catalog',    JSON.stringify(catalog)) },    [catalog])
   useEffect(() => {
     if (leaderRole) sessionStorage.setItem('cp_role', 'leader')
     else sessionStorage.removeItem('cp_role')
@@ -114,16 +122,14 @@ export default function App() {
 
   return (
     <AppContext.Provider value={ctx}>
-      <div className="flex h-screen bg-[#050914] overflow-hidden font-sans">
-        <Sidebar
-          activeView={activeView}
-          setActiveView={setActiveView}
-          open={sidebarOpen}
-          setOpen={setSidebarOpen}
-        />
-        <main className="flex-1 overflow-y-auto scrollbar-thin animate-fade-in">
-          {views[activeView]}
-        </main>
+      <div className="flex h-screen bg-n-50 overflow-hidden">
+        <Sidebar activeView={activeView} setActiveView={setActiveView} leaderRole={leaderRole} setLeaderRole={setLeaderRole} profile={profile} />
+        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+          <Topbar activeView={activeView} label={VIEW_LABELS[activeView]} />
+          <main className="flex-1 overflow-y-auto scrollbar-thin animate-fade-in">
+            {views[activeView]}
+          </main>
+        </div>
       </div>
     </AppContext.Provider>
   )

@@ -1,28 +1,80 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;600&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
-  * { box-sizing: border-box; }
+  *, *::before, *::after { box-sizing: border-box; }
   body {
-    font-family: 'Inter', system-ui, sans-serif;
-    background: #050914;
-    color: #f1f5f9;
+    font-family: 'Roboto', system-ui, sans-serif;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 1.4;
+    letter-spacing: 0.2px;
+    color: #303036;
+    background: #f5f6f8;
+    min-height: 100vh;
   }
 }
 
 @layer utilities {
-  .scrollbar-thin::-webkit-scrollbar { width: 4px; }
+  .scrollbar-thin::-webkit-scrollbar       { width: 4px; }
   .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
-  .scrollbar-thin::-webkit-scrollbar-thumb { background: #1e3a5f; border-radius: 2px; }
+  .scrollbar-thin::-webkit-scrollbar-thumb { background: #dfe0e6; border-radius: 2px; }
 
-  .glow-blue {
-    box-shadow: 0 0 20px rgba(59, 130, 246, 0.15);
+  /* Card shadow utilities (match design tokens) */
+  .shadow-4dp { box-shadow: -1px 4px 8px 0px rgba(233,233,244,1); }
+  .shadow-8dp { box-shadow: -1px 8px 16px 0px rgba(170,170,186,0.45); }
+
+  /* Ring progress animation */
+  .ring-progress { transition: stroke-dashoffset 1s cubic-bezier(.4,0,.2,1); }
+
+  /* Skill bar fill animation */
+  .bar-fill { transition: width 0.7s cubic-bezier(.4,0,.2,1); }
+
+  /* Input focus ring */
+  .input-humand {
+    font-family: 'Roboto', system-ui, sans-serif;
+    font-size: 13px;
+    color: #303036;
+    background: #f5f6f8;
+    border: 1.5px solid #dfe0e6;
+    border-radius: 8px;
+    padding: 0 16px;
+    height: 40px;
+    outline: none;
+    width: 100%;
+    transition: border-color 0.13s, box-shadow 0.13s;
+    letter-spacing: 0.2px;
   }
-  .glow-blue-strong {
-    box-shadow: 0 0 30px rgba(59, 130, 246, 0.3);
+  .input-humand::placeholder { color: #aaaaba; }
+  .input-humand:focus {
+    border-color: #6f93eb;
+    background: #fff;
+    box-shadow: 0 0 0 3px #f1f4fd;
   }
-  .border-glow {
-    border-color: rgba(59, 130, 246, 0.4);
+
+  .textarea-humand {
+    font-family: 'Roboto', system-ui, sans-serif;
+    font-size: 13px;
+    color: #303036;
+    background: #f5f6f8;
+    border: 1.5px solid #dfe0e6;
+    border-radius: 8px;
+    padding: 10px 16px;
+    outline: none;
+    width: 100%;
+    resize: vertical;
+    min-height: 80px;
+    transition: border-color 0.13s, box-shadow 0.13s;
+    letter-spacing: 0.2px;
+    line-height: 1.4;
+  }
+  .textarea-humand::placeholder { color: #aaaaba; }
+  .textarea-humand:focus {
+    border-color: #6f93eb;
+    background: #fff;
+    box-shadow: 0 0 0 3px #f1f4fd;
   }
 }

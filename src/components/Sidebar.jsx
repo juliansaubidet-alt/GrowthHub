@@ -1,125 +1,93 @@
-import { LayoutDashboard, User, Target, Activity, ClipboardList, ChevronLeft, ChevronRight, TrendingUp, ShieldCheck, Lock, LogOut } from 'lucide-react'
-import { useApp } from '../App'
+import { LayoutDashboard, User, Target, Activity, ClipboardList, ShieldCheck, Lock, LogOut, TrendingUp } from 'lucide-react'
 
 const NAV = [
-  { id: 'dashboard',  label: 'Dashboard',     icon: LayoutDashboard, desc: 'Vista general' },
-  { id: 'onboarding', label: 'Mi Perfil',      icon: User,            desc: 'Configurar perfil' },
-  { id: 'objectives', label: 'Objetivos OKR',  icon: Target,          desc: 'Metas y key results' },
-  { id: 'skillgap',   label: 'Skill Gap',      icon: Activity,        desc: 'Análisis de brechas' },
-  { id: 'actionplan', label: 'Plan de Acción', icon: ClipboardList,   desc: 'Recursos y timeline' },
+  { id: 'dashboard',  label: 'Dashboard',     icon: LayoutDashboard },
+  { id: 'onboarding', label: 'Mi Perfil',      icon: User },
+  { id: 'objectives', label: 'Objetivos OKR',  icon: Target },
+  { id: 'skillgap',   label: 'Skill Gap',      icon: Activity },
+  { id: 'actionplan', label: 'Plan de Acción', icon: ClipboardList },
 ]
 
-export default function Sidebar({ activeView, setActiveView, open, setOpen }) {
-  const { profile, leaderRole, setLeaderRole } = useApp()
+export default function Sidebar({ activeView, setActiveView, leaderRole, setLeaderRole, profile }) {
+  const initials = profile?.role
+    ? profile.role.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
+    : 'GH'
 
   return (
-    <aside className={`relative flex flex-col bg-[#080e1f] border-r border-blue-900/30 text-white transition-all duration-300 shrink-0 ${open ? 'w-64' : 'w-16'}`}>
-      {/* Toggle */}
-      <button
-        onClick={() => setOpen(!open)}
-        className="absolute -right-3 top-6 z-10 w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-900/50 hover:bg-blue-500 transition-colors"
-      >
-        {open ? <ChevronLeft size={13} /> : <ChevronRight size={13} />}
-      </button>
-
-      {/* Brand */}
-      <div className={`flex items-center gap-3 px-4 py-5 border-b border-blue-900/30 ${!open && 'justify-center'}`}>
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center shrink-0 shadow-lg shadow-blue-900/50">
-          <TrendingUp size={15} className="text-white" />
+    <aside className="w-60 bg-white border-r border-n-200 flex flex-col shrink-0 h-screen sticky top-0 z-50">
+      {/* Logo */}
+      <div className="h-14 flex items-center gap-2 px-6 border-b border-n-200 shrink-0">
+        <div className="w-7 h-7 rounded-lg bg-h-500 flex items-center justify-center shrink-0">
+          <TrendingUp size={14} className="text-white" />
         </div>
-        {open && (
-          <div className="min-w-0">
-            <p className="font-bold text-sm leading-tight text-white tracking-wide">CareerPath</p>
-            <p className="text-[10px] text-blue-400/70 truncate">Planificador Pro</p>
-          </div>
-        )}
+        <span className="text-base font-semibold text-n-950 tracking-tight">Growth Hub</span>
       </div>
 
-      {/* Profile chip */}
-      {open && profile.role && (
-        <div className="mx-3 mt-3 px-3 py-2 rounded-lg bg-blue-950/50 border border-blue-800/40">
-          <p className="text-xs text-gray-300 truncate">{profile.role}</p>
-          {profile.industry && <p className="text-[10px] text-blue-400 truncate mt-0.5">{profile.industry}</p>}
-        </div>
-      )}
-
       {/* Nav */}
-      <nav className="flex-1 px-2 py-4 space-y-0.5 overflow-y-auto scrollbar-thin">
-        {NAV.map(({ id, label, icon: Icon, desc }) => {
+      <nav className="flex-1 px-3 py-6 flex flex-col gap-0.5 overflow-y-auto scrollbar-thin">
+        {NAV.map(({ id, label, icon: Icon }) => {
           const active = activeView === id
           return (
             <button
               key={id}
               onClick={() => setActiveView(id)}
-              title={!open ? label : undefined}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 group ${
+              className={`w-full flex items-center gap-2 px-3 h-10 rounded-lg text-sm transition-all duration-100 ${
                 active
-                  ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30 shadow-sm shadow-blue-900/30'
-                  : 'text-gray-500 hover:bg-blue-950/50 hover:text-gray-300 border border-transparent'
-              } ${!open && 'justify-center'}`}
+                  ? 'bg-h-50 text-h-600 font-semibold'
+                  : 'text-n-800 hover:bg-n-50 hover:text-n-950 font-normal'
+              }`}
             >
-              <Icon size={18} className={`shrink-0 ${active ? 'text-blue-400' : ''}`} />
-              {open && (
-                <div className="min-w-0 text-left">
-                  <p className="leading-tight truncate">{label}</p>
-                  {!active && <p className="text-[10px] text-gray-600 truncate group-hover:text-gray-500">{desc}</p>}
-                </div>
-              )}
-              {active && open && (
-                <div className="ml-auto w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0" />
-              )}
+              <Icon size={18} className="shrink-0" />
+              {label}
             </button>
           )
         })}
 
-        {/* Divider */}
-        <div className="my-2 border-t border-blue-900/30" />
+        <div className="my-3 border-t border-n-100" />
+        <p className="text-[10px] font-semibold text-n-500 uppercase tracking-widest px-3 mb-1">Admin</p>
 
-        {/* Admin */}
         <button
           onClick={() => setActiveView('admin')}
-          title={!open ? 'Admin' : undefined}
-          className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 group border ${
+          className={`w-full flex items-center gap-2 px-3 h-10 rounded-lg text-sm transition-all duration-100 ${
             activeView === 'admin'
-              ? 'bg-cyan-600/20 text-cyan-400 border-cyan-500/30'
-              : 'text-gray-500 hover:bg-cyan-950/30 hover:text-cyan-400 border-transparent'
-          } ${!open && 'justify-center'}`}
+              ? 'bg-h-50 text-h-600 font-semibold'
+              : 'text-n-800 hover:bg-n-50 hover:text-n-950 font-normal'
+          }`}
         >
           {leaderRole ? <ShieldCheck size={18} className="shrink-0" /> : <Lock size={18} className="shrink-0" />}
-          {open && (
-            <div className="min-w-0 text-left flex-1">
-              <p className="leading-tight truncate">Admin</p>
-              {activeView !== 'admin' && (
-                <p className="text-[10px] truncate text-gray-600 group-hover:text-cyan-500/60">
-                  {leaderRole ? 'Sesión activa' : 'Solo líderes'}
-                </p>
-              )}
-            </div>
-          )}
-          {open && leaderRole && (
-            <span className="text-[9px] bg-cyan-500/20 text-cyan-400 px-1.5 py-0.5 rounded font-bold shrink-0 border border-cyan-500/20">LÍDER</span>
+          <span className="flex-1 text-left">Admin</span>
+          {leaderRole && (
+            <span className="text-[9px] font-semibold bg-h-100 text-h-800 px-1.5 py-0.5 rounded-full">LÍDER</span>
           )}
         </button>
 
-        {/* Logout leader */}
         {leaderRole && (
           <button
             onClick={() => { setLeaderRole(false); if (activeView === 'admin') setActiveView('dashboard') }}
-            title={!open ? 'Cerrar sesión líder' : undefined}
-            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs text-gray-600 hover:text-red-400 hover:bg-red-950/30 transition-all ${!open && 'justify-center'}`}
+            className="w-full flex items-center gap-2 px-3 h-9 rounded-lg text-xs text-n-600 hover:text-r-600 hover:bg-r-50 transition-all"
           >
             <LogOut size={14} className="shrink-0" />
-            {open && <span>Cerrar sesión líder</span>}
+            Cerrar sesión líder
           </button>
         )}
       </nav>
 
-      {/* Footer */}
-      {open && (
-        <div className="p-3 border-t border-blue-900/30">
-          <p className="text-[10px] text-gray-700 text-center">v1.0 · Growth Hub</p>
+      {/* User footer */}
+      <div className="p-3 border-t border-n-100">
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-n-50 cursor-pointer transition-colors">
+          <div className="w-8 h-8 rounded-full bg-h-100 text-h-800 text-xs font-semibold flex items-center justify-center shrink-0">
+            {initials}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[13px] font-semibold text-n-950 truncate">
+              {profile?.role || 'Mi Perfil'}
+            </p>
+            <p className="text-[11px] text-n-800 truncate">
+              {profile?.industry || 'Configurar perfil'}
+            </p>
+          </div>
         </div>
-      )}
+      </div>
     </aside>
   )
 }
