@@ -1,4 +1,49 @@
 import { useState } from 'react'
+import { Lock, Eye, EyeOff, X } from 'lucide-react'
+
+const RESTRICTED_PASSWORD = 'humand2026'
+
+function PasswordModal({ tabLabel, onSuccess, onClose }) {
+  const [pw, setPw]       = useState('')
+  const [show, setShow]   = useState(false)
+  const [error, setError] = useState(false)
+
+  const attempt = () => {
+    if (pw === RESTRICTED_PASSWORD) { onSuccess() }
+    else { setError(true); setTimeout(() => setError(false), 2500) }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-n-950/30 backdrop-blur-sm animate-fade-in">
+      <div className="bg-white rounded-2xl shadow-8dp w-full max-w-sm p-8 text-center border border-n-200 relative">
+        <button onClick={onClose} className="absolute top-4 right-4 text-n-500 hover:text-n-950 transition"><X size={16} /></button>
+        <div className="w-12 h-12 mx-auto mb-4 rounded-xl bg-h-500 flex items-center justify-center">
+          <Lock size={20} className="text-white" />
+        </div>
+        <h2 className="text-base font-semibold text-n-950 mb-1">Acceso restringido</h2>
+        <p className="text-xs text-n-800 mb-5">La sección <strong>{tabLabel}</strong> requiere contraseña.</p>
+        <div className="relative mb-3">
+          <input
+            type={show ? 'text' : 'password'}
+            value={pw}
+            autoFocus
+            onChange={e => { setPw(e.target.value); setError(false) }}
+            onKeyDown={e => e.key === 'Enter' && attempt()}
+            placeholder="Contraseña"
+            className={`input-humand pr-10 ${error ? 'border-r-400' : ''}`}
+          />
+          <button onClick={() => setShow(s => !s)} className="absolute right-3 top-1/2 -translate-y-1/2 text-n-500 hover:text-n-950">
+            {show ? <EyeOff size={15} /> : <Eye size={15} />}
+          </button>
+        </div>
+        {error && <p className="text-xs text-r-600 font-semibold mb-3">Contraseña incorrecta.</p>}
+        <button onClick={attempt} className="w-full h-10 bg-h-500 hover:bg-h-600 text-white rounded-lg text-[13px] font-semibold transition">
+          Ingresar
+        </button>
+      </div>
+    </div>
+  )
+}
 
 /* ─── shared helpers ─────────────────────────────────────────────── */
 const CIRCUMFERENCE = 2 * Math.PI * 32
@@ -585,7 +630,27 @@ const ACTOR_TABS = [
 ]
 
 export default function CareerPath() {
-  const [actor, setActor] = useState('employee')
+  const [actor, setActor]           = useState('employee')
+  const [pendingTab, setPendingTab] = useState(null)   // tab waiting for password
+  const [unlocked, setUnlocked]     = useState(() => {
+    try { return JSON.parse(sessionStorage.getItem('cp_tabs_unlocked') || '[]') } catch { return [] }
+  })
+
+  const unlock = (tabId) => {
+    const next = [...unlocked, tabId]
+    setUnlocked(next)
+    sessionStorage.setItem('cp_tabs_unlocked', JSON.stringify(next))
+    setActor(tabId)
+    setPendingTab(null)
+  }
+
+  const handleTabClick = (tabId) => {
+    if (tabId === 'employee') { setActor('employee'); return }
+    if (unlocked.includes(tabId)) { setActor(tabId); return }
+    setPendingTab(tabId)
+  }
+
+  const pendingLabel = ACTOR_TABS.find(t => t.id === pendingTab)?.label || ''
 
   return (
     <div className="p-8 max-w-6xl mx-auto animate-slide-in">
@@ -598,22 +663,34 @@ export default function CareerPath() {
 
         {/* Actor switcher */}
         <div className="flex items-center gap-1 bg-n-100 p-1 rounded-xl">
-          {ACTOR_TABS.map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActor(tab.id)}
-              className={`flex items-center gap-2 px-4 h-8 rounded-lg text-[13px] transition-all ${actor === tab.id ? 'bg-white shadow-4dp text-n-950 font-semibold' : 'text-n-600 font-normal hover:text-n-950'}`}
-            >
-              <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: tab.dot }} />
-              {tab.label}
-            </button>
-          ))}
+          {ACTOR_TABS.map(tab => {
+            const isRestricted = tab.id !== 'employee' && !unlocked.includes(tab.id)
+            return (
+              <button
+                key={tab.id}
+                onClick={() => handleTabClick(tab.id)}
+                className={`flex items-center gap-2 px-4 h-8 rounded-lg text-[13px] transition-all ${actor === tab.id ? 'bg-white shadow-4dp text-n-950 font-semibold' : 'text-n-600 font-normal hover:text-n-950'}`}
+              >
+                <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: tab.dot }} />
+                {tab.label}
+                {isRestricted && <Lock size={11} className="opacity-50 ml-0.5" />}
+              </button>
+            )
+          })}
         </div>
       </div>
 
       {actor === 'employee' && <EmployeeTab />}
       {actor === 'manager'  && <ManagerTab />}
       {actor === 'hradmin'  && <HRAdminTab />}
+
+      {pendingTab && (
+        <PasswordModal
+          tabLabel={pendingLabel}
+          onSuccess={() => unlock(pendingTab)}
+          onClose={() => setPendingTab(null)}
+        />
+      )}
     </div>
   )
 }
