@@ -755,6 +755,466 @@ function LevelObjectivesBuilder() {
   )
 }
 
+/* ─── BIBLIOTECA DE COMPETENCIAS ────────────────────────────────── */
+const CAT_COLORS_LIB = {
+  'Técnico':    'bg-h-50 text-h-700 border-h-100',
+  'Liderazgo':  'bg-p-50 text-p-700 border-p-100',
+  'Soft Skills':'bg-g-50 text-g-800 border-g-100',
+}
+function BibliotecaCompetencias() {
+  const { competencies } = useApp()
+  const [search, setSearch]       = useState('')
+  const [filterCat, setFilterCat] = useState('all')
+  const CAT_OPTIONS = ['Técnico', 'Liderazgo', 'Soft Skills']
+  const totalSkills = competencies.reduce((a, c) => a + c.skills.length, 0)
+  const filtered = competencies
+    .filter(c => filterCat === 'all' || c.category === filterCat)
+    .filter(c => !search || c.name.toLowerCase().includes(search.toLowerCase()) ||
+      c.description?.toLowerCase().includes(search.toLowerCase()) ||
+      c.skills.some(s => s.name.toLowerCase().includes(search.toLowerCase())))
+  return (
+    <div className="flex flex-col gap-5">
+      <div className="grid grid-cols-3 gap-4">
+        {[
+          { label: 'Competencias totales', value: competencies.length, color: 'text-h-600' },
+          { label: 'Habilidades mapeadas',  value: totalSkills,         color: 'text-p-700' },
+          { label: 'Categorías',            value: CAT_OPTIONS.length,  color: 'text-g-800' },
+        ].map(s => (
+          <div key={s.label} className="bg-white rounded-2xl shadow-4dp p-4 text-center">
+            <p className={`text-3xl font-bold ${s.color}`}>{s.value}</p>
+            <p className="text-[11px] text-n-600 mt-0.5">{s.label}</p>
+          </div>
+        ))}
+      </div>
+      <div className="flex items-center gap-3 flex-wrap">
+        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar competencia o habilidad..." className="input-humand w-64" style={{ height: 36 }} />
+        <div className="flex gap-1.5">
+          {[['all','Todas'], ...CAT_OPTIONS.map(c => [c,c])].map(([k,l]) => (
+            <button key={k} onClick={() => setFilterCat(k)}
+              className={`h-7 px-3 rounded-full text-[11px] font-semibold border transition-all ${filterCat === k ? 'bg-h-50 text-h-600 border-h-200' : 'bg-n-100 text-n-800 border-transparent hover:border-n-300'}`}>
+              {l}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        {filtered.map(comp => (
+          <div key={comp.id} className="bg-white rounded-2xl shadow-4dp border border-n-100 hover:shadow-8dp hover:border-h-200 transition-all p-5">
+            <div className="flex items-start gap-3 mb-3">
+              <div className="flex-1 min-w-0">
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${CAT_COLORS_LIB[comp.category] || 'bg-n-100 text-n-700 border-n-200'}`}>{comp.category}</span>
+                <h3 className="text-[14px] font-semibold text-n-950 mt-1.5">{comp.name}</h3>
+                {comp.description && <p className="text-[12px] text-n-600 mt-0.5">{comp.description}</p>}
+              </div>
+              <span className="w-7 h-7 rounded-full bg-h-50 text-h-700 text-[11px] font-bold flex items-center justify-center shrink-0">{comp.skills.length}</span>
+            </div>
+            {comp.skills.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {comp.skills.map(sk => (
+                  <span key={sk.id} className="text-[11px] bg-n-50 text-n-700 px-2 py-0.5 rounded-lg border border-n-100">{sk.name}</span>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
+        {filtered.length === 0 && (
+          <div className="col-span-3 text-center py-12 text-n-500 bg-white rounded-2xl shadow-4dp"><p className="text-sm">No se encontraron competencias</p></div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+/* ─── SALUD ORGANIZACIONAL ───────────────────────────────────────── */
+const TEAM_HEALTH = [
+  { team: 'Product Design',       engagement: 82, planActivo: 75, retencion: 91, riesgo: 'bajo'  },
+  { team: 'Frontend Engineering', engagement: 74, planActivo: 60, retencion: 84, riesgo: 'medio' },
+  { team: 'Backend Engineering',  engagement: 68, planActivo: 45, retencion: 78, riesgo: 'alto'  },
+  { team: 'Data & Analytics',     engagement: 79, planActivo: 70, retencion: 88, riesgo: 'bajo'  },
+  { team: 'People & Culture',     engagement: 88, planActivo: 90, retencion: 94, riesgo: 'bajo'  },
+  { team: 'Growth Marketing',     engagement: 65, planActivo: 40, retencion: 75, riesgo: 'alto'  },
+]
+const RIESGO_BADGE = { bajo: 'bg-g-50 text-g-800', medio: 'bg-y-50 text-y-700', alto: 'bg-r-50 text-r-600' }
+
+function SaludOrganizacional() {
+  const avg = (key) => Math.round(TEAM_HEALTH.reduce((a, t) => a + t[key], 0) / TEAM_HEALTH.length)
+  const riesgoAlto = TEAM_HEALTH.filter(t => t.riesgo === 'alto').length
+  return (
+    <div className="flex flex-col gap-5">
+      <div className="grid grid-cols-4 gap-4">
+        {[
+          { label: 'Engagement promedio', value: `${avg('engagement')}%`, sub: '+3% vs mes anterior',    color: 'text-h-600' },
+          { label: '% con plan activo',    value: `${avg('planActivo')}%`, sub: `${TEAM_HEALTH.filter(t => t.planActivo >= 60).length}/${TEAM_HEALTH.length} equipos`, color: 'text-g-800' },
+          { label: 'Retención proyectada', value: `${avg('retencion')}%`, sub: 'Próximos 12 meses',      color: 'text-t-700' },
+          { label: 'Equipos en riesgo',    value: riesgoAlto,             sub: 'Requieren atención',     color: 'text-r-600' },
+        ].map(s => (
+          <div key={s.label} className="bg-white rounded-2xl shadow-4dp p-4">
+            <p className={`text-3xl font-bold ${s.color}`}>{s.value}</p>
+            <p className="text-[12px] font-semibold text-n-950 mt-1">{s.label}</p>
+            <p className="text-[11px] text-n-600">{s.sub}</p>
+          </div>
+        ))}
+      </div>
+      <div className="bg-white rounded-2xl shadow-4dp overflow-hidden">
+        <div className="px-6 py-4 border-b border-n-100">
+          <p className="text-[13px] font-semibold text-n-950">Salud por equipo</p>
+          <p className="text-[11px] text-n-600">Engagement, cobertura de planes y retención proyectada</p>
+        </div>
+        <table className="w-full">
+          <thead>
+            <tr className="border-b border-n-100">
+              {['Equipo','Engagement','Plan activo','Retención proy.','Riesgo'].map(h => (
+                <th key={h} className="px-6 py-3 text-left text-[10px] font-semibold text-n-600 uppercase tracking-widest">{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {TEAM_HEALTH.map((t, i) => (
+              <tr key={i} className="border-b border-n-50 hover:bg-n-50 transition-colors">
+                <td className="px-6 py-3 text-[13px] font-semibold text-n-950">{t.team}</td>
+                <td className="px-6 py-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-24 h-1.5 bg-n-100 rounded-full overflow-hidden">
+                      <div className="h-full rounded-full bar-fill" style={{ width: `${t.engagement}%`, backgroundColor: t.engagement >= 80 ? '#35a48e' : t.engagement >= 70 ? '#f59e0b' : '#ef4444' }} />
+                    </div>
+                    <span className="text-[12px] text-n-600">{t.engagement}%</span>
+                  </div>
+                </td>
+                <td className="px-6 py-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-24 h-1.5 bg-n-100 rounded-full overflow-hidden">
+                      <div className="h-full bg-h-500 rounded-full bar-fill" style={{ width: `${t.planActivo}%` }} />
+                    </div>
+                    <span className="text-[12px] text-n-600">{t.planActivo}%</span>
+                  </div>
+                </td>
+                <td className="px-6 py-3 text-[12px] text-n-600">{t.retencion}%</td>
+                <td className="px-6 py-3"><span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full capitalize ${RIESGO_BADGE[t.riesgo]}`}>{t.riesgo}</span></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="bg-white rounded-2xl shadow-4dp p-5">
+        <p className="text-[13px] font-semibold text-n-950 mb-4">Cobertura de planes por equipo</p>
+        <div className="flex flex-col gap-3">
+          {TEAM_HEALTH.map(t => (
+            <div key={t.team} className="flex items-center gap-3">
+              <span className="text-[12px] text-n-800 w-44 truncate shrink-0">{t.team}</span>
+              <div className="flex-1 h-2 bg-n-100 rounded-full overflow-hidden">
+                <div className="h-full bg-h-500 rounded-full bar-fill" style={{ width: `${t.planActivo}%` }} />
+              </div>
+              <span className="text-[12px] font-semibold text-n-950 w-8 text-right shrink-0">{t.planActivo}%</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* ─── HEADCOUNT PLANNING ─────────────────────────────────────────── */
+const ROLES_CATALOG = [
+  { id: 'sr-designer', label: 'Senior Designer',      area: 'Design',      requiredSkills: ['Figma','Prototyping','Design Systems','UX Research','Stakeholder Mgmt'] },
+  { id: 'tech-lead',   label: 'Tech Lead Frontend',   area: 'Engineering', requiredSkills: ['React','TypeScript','Liderazgo','Arquitectura','Mentoring'] },
+  { id: 'pm',          label: 'Product Manager',      area: 'Product',     requiredSkills: ['Roadmapping','Stakeholder Mgmt','Agile','Data Analysis','Comunicación'] },
+]
+const INT_CANDIDATES = [
+  { name: 'Ana Martínez', current: 'Mid Designer',     initials: 'AM', color: 'bg-h-100 text-h-700', skills: ['Figma','Prototyping','Design Systems','UX Research'] },
+  { name: 'Luis Torres',  current: 'Senior Designer',  initials: 'LT', color: 'bg-p-100 text-p-700', skills: ['Figma','Prototyping','Design Systems','UX Research','Stakeholder Mgmt'] },
+  { name: 'María Gómez',  current: 'Mid Designer',     initials: 'MG', color: 'bg-g-100 text-g-800', skills: ['Figma','Prototyping','UX Research'] },
+  { name: 'Carlos Ruiz',  current: 'Junior Designer',  initials: 'CR', color: 'bg-y-100 text-y-700', skills: ['Figma','Prototyping'] },
+]
+function HeadcountPlanning() {
+  const [selectedRole, setSelectedRole] = useState(ROLES_CATALOG[0].id)
+  const role = ROLES_CATALOG.find(r => r.id === selectedRole)
+  const candidates = INT_CANDIDATES.map(c => {
+    const matched = c.skills.filter(s => role.requiredSkills.includes(s)).length
+    const pct     = Math.round((matched / role.requiredSkills.length) * 100)
+    return { ...c, pct, missingForRole: role.requiredSkills.filter(s => !c.skills.includes(s)) }
+  }).sort((a, b) => b.pct - a.pct)
+  return (
+    <div className="flex flex-col gap-5">
+      <div className="bg-h-50 border border-h-100 rounded-2xl p-5 flex items-start gap-3">
+        <span className="text-2xl shrink-0">🔍</span>
+        <div>
+          <p className="text-[13px] font-semibold text-h-800">Antes de abrir una búsqueda externa</p>
+          <p className="text-[12px] text-h-700 mt-0.5">El sistema evalúa el alineamiento de competencias de candidatos internos al rol objetivo. Si hay candidatos con ≥ 80% de alineación, priorizá el desarrollo interno.</p>
+        </div>
+      </div>
+      <div className="bg-white rounded-2xl shadow-4dp p-5">
+        <p className="text-[11px] font-semibold text-n-600 uppercase tracking-widest mb-2">Rol a cubrir</p>
+        <div className="flex gap-2 flex-wrap mb-3">
+          {ROLES_CATALOG.map(r => (
+            <button key={r.id} onClick={() => setSelectedRole(r.id)}
+              className={`h-9 px-4 rounded-xl text-[13px] font-semibold border transition-all ${selectedRole === r.id ? 'bg-h-500 text-white border-h-500 shadow-4dp' : 'bg-white text-n-800 border-n-200 hover:border-h-300'}`}>
+              {r.label}
+            </button>
+          ))}
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          <span className="text-[11px] text-n-600 font-semibold">Skills requeridas:</span>
+          {role.requiredSkills.map(s => (
+            <span key={s} className="text-[11px] bg-h-50 text-h-700 px-2 py-0.5 rounded-lg border border-h-100">{s}</span>
+          ))}
+        </div>
+      </div>
+      <div className="flex flex-col gap-3">
+        <p className="text-[11px] font-semibold text-n-600 uppercase tracking-widest">Candidatos internos — ordenados por alineación</p>
+        {candidates.map((c, i) => (
+          <div key={c.name} className={`bg-white rounded-2xl shadow-4dp p-5 border transition-all ${c.pct >= 80 ? 'border-g-200 hover:shadow-8dp' : c.pct >= 60 ? 'border-y-200' : 'border-n-100'}`}>
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${c.color}`}>{c.initials}</div>
+                {i === 0 && <span className="absolute -top-1 -right-1 text-xs">⭐</span>}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="text-[13px] font-semibold text-n-950">{c.name}</p>
+                  {c.pct >= 80 && <span className="text-[10px] font-bold bg-g-50 text-g-800 px-2 py-0.5 rounded-full">Listo para promover</span>}
+                  {c.pct >= 60 && c.pct < 80 && <span className="text-[10px] font-bold bg-y-50 text-y-700 px-2 py-0.5 rounded-full">Desarrollo a corto plazo</span>}
+                  {c.pct < 60 && <span className="text-[10px] font-bold bg-n-100 text-n-600 px-2 py-0.5 rounded-full">Desarrollo a largo plazo</span>}
+                </div>
+                <p className="text-[11px] text-n-600">{c.current}</p>
+              </div>
+              <div className="text-right shrink-0">
+                <p className={`text-2xl font-bold ${c.pct >= 80 ? 'text-g-700' : c.pct >= 60 ? 'text-y-600' : 'text-n-500'}`}>{c.pct}%</p>
+                <p className="text-[10px] text-n-600">alineación</p>
+              </div>
+            </div>
+            <div className="mt-3 w-full h-1.5 bg-n-100 rounded-full overflow-hidden">
+              <div className="h-full rounded-full bar-fill" style={{ width: `${c.pct}%`, backgroundColor: c.pct >= 80 ? '#35a48e' : c.pct >= 60 ? '#f59e0b' : '#9ca3af' }} />
+            </div>
+            {c.missingForRole.length > 0 && (
+              <div className="mt-2 flex items-center gap-2 flex-wrap">
+                <span className="text-[10px] text-n-500 font-semibold">Gaps:</span>
+                {c.missingForRole.map(s => (
+                  <span key={s} className="text-[10px] bg-r-50 text-r-600 px-2 py-0.5 rounded-lg border border-r-100">{s}</span>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/* ─── CONFIGURACIÓN DE VISIBILIDAD ──────────────────────────────── */
+const VIS_MATRIX_DEFAULT = {
+  L2: { L1: true,  L2: false, L3: false, L4: false },
+  L3: { L1: true,  L2: true,  L3: false, L4: false },
+  L4: { L1: true,  L2: true,  L3: true,  L4: false },
+  HR: { L1: true,  L2: true,  L3: true,  L4: true  },
+}
+const VIS_FIELDS_DEFAULT = {
+  plan:     { label: 'Plan de carrera completo',   on: true  },
+  progress: { label: 'Progreso en objetivos',      on: true  },
+  goals:    { label: 'Objetivos personales',       on: true  },
+  salary:   { label: 'Información salarial',       on: false },
+  feedback: { label: 'Feedback recibido',          on: false },
+  perf:     { label: 'Evaluaciones de desempeño',  on: true  },
+}
+function Toggle({ on, onToggle }) {
+  return (
+    <button onClick={onToggle} className={`w-10 h-6 rounded-full transition-colors relative shrink-0 ${on ? 'bg-h-500' : 'bg-n-200'}`}>
+      <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-all ${on ? 'left-[18px]' : 'left-0.5'}`} />
+    </button>
+  )
+}
+function ConfigVisibilidad() {
+  const [matrix, setMatrix] = useState(VIS_MATRIX_DEFAULT)
+  const [fields, setFields] = useState(VIS_FIELDS_DEFAULT)
+  const [saved, setSaved]   = useState(false)
+  const LEVELS  = ['L1','L2','L3','L4']
+  const VIEWERS = ['L2','L3','L4','HR']
+  const VIEWER_LABELS = { L2:'Mid (L2)', L3:'Senior (L3)', L4:'Lead (L4)', HR:'HR Admin' }
+  const toggle = (viewer, target) => setMatrix(m => ({ ...m, [viewer]: { ...m[viewer], [target]: !m[viewer][target] } }))
+  const save   = () => { setSaved(true); setTimeout(() => setSaved(false), 2000) }
+  return (
+    <div className="flex flex-col gap-5">
+      <div className="bg-y-50 border border-y-200 rounded-2xl p-4 flex items-start gap-3">
+        <span className="text-xl shrink-0">⚠️</span>
+        <p className="text-[12px] text-y-800">Estas reglas definen qué información puede ver cada nivel sobre los planes del nivel inferior. Los cambios tienen impacto en toda la organización.</p>
+      </div>
+      <div className="bg-white rounded-2xl shadow-4dp overflow-hidden">
+        <div className="px-6 py-4 border-b border-n-100">
+          <p className="text-[13px] font-semibold text-n-950">Matriz de visibilidad</p>
+          <p className="text-[11px] text-n-600 mt-0.5">Filas = quién observa · Columnas = a quién puede ver</p>
+        </div>
+        <div className="p-5 overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr>
+                <th className="text-left text-[10px] font-semibold text-n-600 uppercase tracking-widest pb-3 pr-8">Puede ver →</th>
+                {LEVELS.map(l => <th key={l} className="text-center text-[10px] font-semibold text-n-600 uppercase tracking-widest pb-3 px-4">{l}</th>)}
+              </tr>
+            </thead>
+            <tbody>
+              {VIEWERS.map(viewer => (
+                <tr key={viewer} className="border-t border-n-50">
+                  <td className="py-3 pr-8 text-[12px] font-semibold text-n-950">{VIEWER_LABELS[viewer]}</td>
+                  {LEVELS.map(target => {
+                    const has = matrix[viewer]?.[target] !== undefined
+                    return (
+                      <td key={target} className="py-3 px-4 text-center">
+                        {!has ? <span className="text-n-300 text-xs">—</span>
+                          : <Toggle on={matrix[viewer][target]} onToggle={() => toggle(viewer, target)} />}
+                      </td>
+                    )
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div className="bg-white rounded-2xl shadow-4dp p-5">
+        <p className="text-[13px] font-semibold text-n-950 mb-4">Visibilidad por tipo de dato</p>
+        <div className="flex flex-col gap-1">
+          {Object.entries(fields).map(([key, meta]) => (
+            <div key={key} className="flex items-center justify-between py-3 border-b border-n-50 last:border-0">
+              <div>
+                <p className="text-[13px] text-n-950">{meta.label}</p>
+                {!meta.on && <p className="text-[11px] text-r-500">Solo visible para HR Admin</p>}
+              </div>
+              <Toggle on={meta.on} onToggle={() => setFields(f => ({ ...f, [key]: { ...f[key], on: !f[key].on } }))} />
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="flex justify-end">
+        <button onClick={save} className={`h-9 px-6 rounded-lg text-[13px] font-semibold transition-all shadow-4dp ${saved ? 'bg-g-500 text-white' : 'bg-h-500 hover:bg-h-600 text-white'}`}>
+          {saved ? '✓ Guardado' : 'Guardar configuración'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+/* ─── MÉTRICAS DE IMPACTO ────────────────────────────────────────── */
+const MONTHLY_ADOPTION = [
+  { month: 'Oct', pct: 38 }, { month: 'Nov', pct: 45 }, { month: 'Dic', pct: 52 },
+  { month: 'Ene', pct: 58 }, { month: 'Feb', pct: 65 }, { month: 'Mar', pct: 72 },
+]
+const COMP_EVOLUTION = [
+  { area: 'Diseño Visual',      before: 52, after: 71 },
+  { area: 'Liderazgo',          before: 41, after: 63 },
+  { area: 'Comunicación',       before: 60, after: 74 },
+  { area: 'Desarrollo Técnico', before: 55, after: 78 },
+  { area: 'Soft Skills',        before: 48, after: 65 },
+]
+function MetricasImpacto() {
+  const NPS = 62
+  const npsColor = NPS >= 50 ? 'text-g-700' : NPS >= 30 ? 'text-y-600' : 'text-r-600'
+  return (
+    <div className="flex flex-col gap-5">
+      <div className="grid grid-cols-4 gap-4">
+        {[
+          { label: '% con plan activo',    value: '72%',  sub: '+14% vs inicio año',     color: 'text-h-600' },
+          { label: 'NPS del módulo',        value: NPS,    sub: 'Basado en 48 respuestas', color: npsColor    },
+          { label: 'Retención (con plan)',  value: '91%',  sub: 'vs 74% sin plan',         color: 'text-g-700' },
+          { label: 'Tiempo prom. a promo',  value: '9.2m', sub: '-2.1m vs año anterior',   color: 'text-p-700' },
+        ].map(s => (
+          <div key={s.label} className="bg-white rounded-2xl shadow-4dp p-4">
+            <p className={`text-3xl font-bold ${s.color}`}>{s.value}</p>
+            <p className="text-[12px] font-semibold text-n-950 mt-1">{s.label}</p>
+            <p className="text-[11px] text-n-600">{s.sub}</p>
+          </div>
+        ))}
+      </div>
+      <div className="grid grid-cols-2 gap-5">
+        <div className="bg-white rounded-2xl shadow-4dp p-5">
+          <p className="text-[13px] font-semibold text-n-950 mb-1">Adopción — últimos 6 meses</p>
+          <p className="text-[11px] text-n-600 mb-4">% de empleados con plan activo</p>
+          <div className="flex items-end gap-2 h-32">
+            {MONTHLY_ADOPTION.map(m => (
+              <div key={m.month} className="flex-1 flex flex-col items-center gap-1">
+                <span className="text-[10px] font-semibold text-h-600">{m.pct}%</span>
+                <div className="w-full bg-h-500 rounded-t-md" style={{ height: `${(m.pct / 100) * 96}px`, opacity: 0.55 + (m.pct / 250) }} />
+                <span className="text-[10px] text-n-500">{m.month}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="bg-white rounded-2xl shadow-4dp p-5">
+          <p className="text-[13px] font-semibold text-n-950 mb-1">NPS del módulo Career Path</p>
+          <p className="text-[11px] text-n-600 mb-3">¿Recomendarías usar esta herramienta?</p>
+          <div className="flex items-center justify-center mb-4">
+            <div className="text-center">
+              <p className={`text-5xl font-bold ${npsColor}`}>{NPS}</p>
+              <p className="text-[12px] text-n-600 mt-1">NPS Score</p>
+            </div>
+          </div>
+          <div className="flex flex-col gap-2">
+            {[
+              { label: 'Promotores (9-10)',  pct: 68, color: 'bg-g-400'  },
+              { label: 'Neutrales (7-8)',     pct: 26, color: 'bg-y-400'  },
+              { label: 'Detractores (0-6)',   pct:  6, color: 'bg-r-400'  },
+            ].map(r => (
+              <div key={r.label} className="flex items-center gap-2">
+                <span className="text-[11px] text-n-600 w-36 shrink-0">{r.label}</span>
+                <div className="flex-1 h-1.5 bg-n-100 rounded-full overflow-hidden">
+                  <div className={`h-full rounded-full ${r.color} bar-fill`} style={{ width: `${r.pct}%` }} />
+                </div>
+                <span className="text-[11px] font-semibold text-n-950 w-7 text-right shrink-0">{r.pct}%</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+      <div className="bg-white rounded-2xl shadow-4dp p-5">
+        <p className="text-[13px] font-semibold text-n-950 mb-1">Evolución de competencias por área</p>
+        <p className="text-[11px] text-n-600 mb-5">Score promedio del equipo — antes vs. después de activar planes</p>
+        <div className="flex flex-col gap-4">
+          {COMP_EVOLUTION.map(c => (
+            <div key={c.area}>
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[12px] font-semibold text-n-950">{c.area}</span>
+                <span className="text-[11px] font-bold text-g-700">+{c.after - c.before} pts</span>
+              </div>
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] text-n-500 w-12 shrink-0">Antes</span>
+                  <div className="flex-1 h-1.5 bg-n-100 rounded-full overflow-hidden">
+                    <div className="h-full bg-n-300 rounded-full bar-fill" style={{ width: `${c.before}%` }} />
+                  </div>
+                  <span className="text-[10px] text-n-600 w-6 text-right shrink-0">{c.before}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] text-n-500 w-12 shrink-0">Después</span>
+                  <div className="flex-1 h-1.5 bg-n-100 rounded-full overflow-hidden">
+                    <div className="h-full bg-h-500 rounded-full bar-fill" style={{ width: `${c.after}%` }} />
+                  </div>
+                  <span className="text-[10px] text-h-600 font-semibold w-6 text-right shrink-0">{c.after}</span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="bg-white rounded-2xl shadow-4dp p-5">
+        <p className="text-[13px] font-semibold text-n-950 mb-1">Correlación con retención</p>
+        <p className="text-[11px] text-n-600 mb-4">Empleados con plan activo tienen 17pp más de retención proyectada</p>
+        <div className="grid grid-cols-2 gap-6">
+          {[
+            { label: 'Con plan activo', value: 91, color: 'bg-h-500', textColor: 'text-h-600' },
+            { label: 'Sin plan activo', value: 74, color: 'bg-n-300', textColor: 'text-n-500' },
+          ].map(b => (
+            <div key={b.label} className="flex flex-col items-center gap-2">
+              <p className={`text-4xl font-bold ${b.textColor}`}>{b.value}%</p>
+              <div className="w-full h-2 bg-n-100 rounded-full overflow-hidden">
+                <div className={`h-full rounded-full ${b.color} bar-fill`} style={{ width: `${b.value}%` }} />
+              </div>
+              <p className="text-[12px] text-n-600">{b.label}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 /* ─── HR ADMIN TAB ──────────────────────────────────────────────── */
 function HRAdminTab() {
   const [selectedPath, setSelectedPath] = useState('sd')
@@ -764,6 +1224,11 @@ function HRAdminTab() {
     { id: 'paths',        label: '🗺️ Career Paths' },
     { id: 'competencias', label: '🧩 Competencias' },
     { id: 'niveles',      label: '🎯 Objetivos por Nivel' },
+    { id: 'biblioteca',   label: '📚 Biblioteca' },
+    { id: 'salud',        label: '💚 Salud Org.' },
+    { id: 'headcount',    label: '🔍 Headcount' },
+    { id: 'visibilidad',  label: '🔒 Visibilidad' },
+    { id: 'metricas',     label: '📈 Métricas' },
   ]
 
   return (
@@ -782,10 +1247,10 @@ function HRAdminTab() {
       </div>
 
       {/* Sub-navigation */}
-      <div className="flex items-center gap-1 bg-n-100 p-1 rounded-xl w-fit">
+      <div className="flex items-center gap-1 bg-n-100 p-1 rounded-xl overflow-x-auto scrollbar-thin">
         {SUB_TABS.map(t => (
           <button key={t.id} onClick={() => setSection(t.id)}
-            className={`h-8 px-4 rounded-lg text-[13px] transition-all ${section === t.id ? 'bg-white shadow-4dp text-n-950 font-semibold' : 'text-n-600 hover:text-n-950'}`}>
+            className={`h-8 px-3 rounded-lg text-[12px] whitespace-nowrap transition-all ${section === t.id ? 'bg-white shadow-4dp text-n-950 font-semibold' : 'text-n-600 hover:text-n-950'}`}>
             {t.label}
           </button>
         ))}
@@ -910,6 +1375,21 @@ function HRAdminTab() {
 
       {/* ── Objetivos por Nivel ── */}
       {section === 'niveles' && <LevelObjectivesBuilder />}
+
+      {/* ── Biblioteca ── */}
+      {section === 'biblioteca' && <BibliotecaCompetencias />}
+
+      {/* ── Salud Organizacional ── */}
+      {section === 'salud' && <SaludOrganizacional />}
+
+      {/* ── Headcount Planning ── */}
+      {section === 'headcount' && <HeadcountPlanning />}
+
+      {/* ── Configuración de Visibilidad ── */}
+      {section === 'visibilidad' && <ConfigVisibilidad />}
+
+      {/* ── Métricas de Impacto ── */}
+      {section === 'metricas' && <MetricasImpacto />}
     </div>
   )
 }
