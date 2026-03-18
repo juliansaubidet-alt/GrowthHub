@@ -1280,7 +1280,7 @@ function HeadcountPlanning() {
         <div className="flex flex-wrap gap-1.5">
           <span className="text-[11px] text-n-600 font-semibold">Skills requeridas:</span>
           {role.requiredSkills.map(s => (
-            <span key={s} className="text-[11px] bg-h-50 text-h-700 px-2 py-0.5 rounded-lg border border-h-100">{s}</span>
+            <span key={s} className="text-[11px] bg-h-500 text-white px-2.5 py-0.5 rounded-lg font-medium">{s}</span>
           ))}
         </div>
       </div>
@@ -1314,7 +1314,7 @@ function HeadcountPlanning() {
               <div className="mt-2 flex items-center gap-2 flex-wrap">
                 <span className="text-[10px] text-n-500 font-semibold">Gaps:</span>
                 {c.missingForRole.map(s => (
-                  <span key={s} className="text-[10px] bg-r-50 text-r-600 px-2 py-0.5 rounded-lg border border-r-100">{s}</span>
+                  <span key={s} className="text-[10px] bg-h-500 text-white px-2.5 py-0.5 rounded-lg font-medium">{s}</span>
                 ))}
               </div>
             )}
