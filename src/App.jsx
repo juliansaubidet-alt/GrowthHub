@@ -1,11 +1,15 @@
 import { useState, useEffect, createContext, useContext } from 'react'
 import Sidebar from './components/Sidebar'
 import Topbar from './components/Topbar'
-import Dashboard from './views/Dashboard'
-import Onboarding from './views/Onboarding'
-import Objectives from './views/Objectives'
-import SkillGap from './views/SkillGap'
-import ActionPlan from './views/ActionPlan'
+import Home from './views/Home'
+import CareerPath from './views/CareerPath'
+import People from './views/People'
+import Performance from './views/Performance'
+import Learning from './views/Learning'
+import Goals from './views/Goals'
+import Reviews from './views/Reviews'
+import Meetings from './views/Meetings'
+import Settings from './views/Settings'
 import Admin from './views/Admin'
 
 export const AppContext = createContext(null)
@@ -75,16 +79,20 @@ function load(key, fallback) {
 export const LEADER_PASSWORD = 'lider2026'
 
 const VIEW_LABELS = {
-  dashboard:  'Dashboard',
-  onboarding: 'Mi Perfil',
-  objectives: 'Objetivos OKR',
-  skillgap:   'Skill Gap',
-  actionplan: 'Plan de Acción',
-  admin:      'Admin',
+  home:        'Home',
+  careerpath:  'Career Path',
+  people:      'People',
+  performance: 'Performance',
+  learning:    'Learning',
+  goals:       'Goals',
+  reviews:     'Reviews',
+  meetings:    '1:1s',
+  settings:    'Settings',
+  admin:       'Admin',
 }
 
 export default function App() {
-  const [activeView, setActiveView]   = useState('dashboard')
+  const [activeView, setActiveView]   = useState('home')
   const [leaderRole, setLeaderRole]   = useState(() => sessionStorage.getItem('cp_role') === 'leader')
   const [profile, setProfile]         = useState(() => load('cp_profile',    defaultProfile))
   const [skills, setSkills]           = useState(() => load('cp_skills',     defaultSkills))
@@ -112,12 +120,16 @@ export default function App() {
   }
 
   const views = {
-    dashboard:  <Dashboard />,
-    onboarding: <Onboarding />,
-    objectives: <Objectives />,
-    skillgap:   <SkillGap />,
-    actionplan: <ActionPlan />,
-    admin:      <Admin />,
+    home:        <Home />,
+    careerpath:  <CareerPath />,
+    people:      <People />,
+    performance: <Performance />,
+    learning:    <Learning />,
+    goals:       <Goals />,
+    reviews:     <Reviews />,
+    meetings:    <Meetings />,
+    settings:    <Settings />,
+    admin:       <Admin />,
   }
 
   return (
