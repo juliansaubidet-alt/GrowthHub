@@ -469,11 +469,6 @@ const CAREER_PATHS = [
   },
 ]
 
-const PROGRESSION = [
-  { initials: 'AG', name: 'Ana García',   role: 'Product Designer', pct: 60, status: 'Under review',    statusClass: 'bg-y-100 text-y-700',  est: 'Q3 2026', color: 'bg-h-100 text-h-600' },
-  { initials: 'RD', name: 'Raj Desai',    role: 'Product Designer', pct: 85, status: 'Promotion-ready', statusClass: 'bg-g-100 text-g-800',  est: 'Q2 2026', color: 'bg-t-100 text-t-800' },
-  { initials: 'PT', name: 'Paula Torres', role: 'Junior Designer',  pct: 30, status: 'In progress',     statusClass: 'bg-h-100 text-h-800',  est: 'Q4 2026', color: 'bg-p-100 text-p-500' },
-]
 
 /* ─── COMPETENCY FRAMEWORK BUILDER ─────────────────────────────── */
 const CAT_OPTIONS = ['Técnico', 'Liderazgo', 'Soft Skills', 'Estrategia', 'Otro']
@@ -1337,7 +1332,6 @@ function HRAdminTab() {
     { id: 'paths',        label: '🗺️ Career Paths' },
     { id: 'competencias', label: '🧩 Competencias' },
     { id: 'niveles',      label: '🎯 Objetivos por Nivel' },
-    { id: 'biblioteca',   label: '📚 Biblioteca' },
     { id: 'salud',        label: '💚 Salud Org.' },
     { id: 'headcount',    label: '🔍 Headcount' },
     { id: 'visibilidad',  label: '🔒 Visibilidad' },
@@ -1435,50 +1429,6 @@ function HRAdminTab() {
                 </div>
               </div>
             </div>
-            <div className="bg-white rounded-2xl shadow-4dp">
-              <div className="px-6 py-4 border-b border-n-100 flex items-center justify-between">
-                <div>
-                  <p className="text-[13px] font-semibold text-n-950">Employee Progression</p>
-                  <p className="text-[11px] text-n-600">Targeting Senior Designer</p>
-                </div>
-                <button className="text-[12px] text-h-600 font-medium hover:underline">Export →</button>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-n-100">
-                      {['Employee','Current Role','Progress','Status','Est. Ready',''].map(h => (
-                        <th key={h} className="px-5 py-3 text-left text-[10px] font-semibold text-n-600 uppercase tracking-widest">{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {PROGRESSION.map((p, i) => (
-                      <tr key={i} className="border-b border-n-50 hover:bg-n-50 transition-colors">
-                        <td className="px-5 py-3">
-                          <div className="flex items-center gap-2.5">
-                            <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${p.color}`}>{p.initials}</div>
-                            <span className="text-[13px] font-medium text-n-950">{p.name}</span>
-                          </div>
-                        </td>
-                        <td className="px-5 py-3 text-[12px] text-n-600">{p.role}</td>
-                        <td className="px-5 py-3">
-                          <div className="flex items-center gap-2">
-                            <div className="w-20 h-1.5 bg-n-100 rounded-full overflow-hidden">
-                              <div className="h-full bg-h-500 rounded-full bar-fill" style={{ width: `${p.pct}%` }} />
-                            </div>
-                            <span className="text-[11px] text-n-600">{p.pct}%</span>
-                          </div>
-                        </td>
-                        <td className="px-5 py-3"><span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${p.statusClass}`}>{p.status}</span></td>
-                        <td className="px-5 py-3 text-[12px] text-n-600">{p.est}</td>
-                        <td className="px-5 py-3"><button className="text-[12px] text-h-600 font-medium hover:underline">View</button></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
           </div>
         </div>
       )}
@@ -1489,8 +1439,6 @@ function HRAdminTab() {
       {/* ── Objetivos por Nivel ── */}
       {section === 'niveles' && <LevelObjectivesBuilder />}
 
-      {/* ── Biblioteca ── */}
-      {section === 'biblioteca' && <BibliotecaCompetencias />}
 
       {/* ── Salud Organizacional ── */}
       {section === 'salud' && <SaludOrganizacional />}
