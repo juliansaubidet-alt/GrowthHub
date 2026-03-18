@@ -11,7 +11,6 @@ import Reviews from './views/Reviews'
 import Meetings from './views/Meetings'
 import Settings from './views/Settings'
 import Admin from './views/Admin'
-import LevelObjectives from './views/LevelObjectives'
 
 export const AppContext = createContext(null)
 
@@ -152,8 +151,7 @@ const VIEW_LABELS = {
   reviews:     'Reviews',
   meetings:    '1:1s',
   settings:    'Settings',
-  admin:          'Admin',
-  levelobjectives:'Objetivos por Nivel',
+  admin: 'Admin',
 }
 
 export default function App() {
@@ -202,9 +200,8 @@ export default function App() {
     goals:       <Goals />,
     reviews:     <Reviews />,
     meetings:    <Meetings />,
-    settings:       <Settings />,
-    admin:          <Admin />,
-    levelobjectives:<LevelObjectives />,
+    settings: <Settings />,
+    admin:    <Admin />,
   }
 
   return (

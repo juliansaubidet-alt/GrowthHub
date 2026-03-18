@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Lock, Eye, EyeOff, X, Plus, Trash2, Edit3, ChevronDown, ChevronRight } from 'lucide-react'
 import { useApp } from '../App'
+import LevelObjectives from './LevelObjectives'
 
 const RESTRICTED_PASSWORD = 'humand2026'
 
@@ -1520,6 +1521,7 @@ function HRAdminTab() {
   const SUB_TABS = [
     { id: 'paths',        label: '🗺️ Career Paths' },
     { id: 'competencias', label: '🧩 Competencias' },
+    { id: 'niveles',      label: '🎯 Objetivos por Nivel' },
     { id: 'salud',        label: '💚 Salud Org.' },
     { id: 'headcount',    label: '🔍 Headcount' },
     { id: 'visibilidad',  label: '🔒 Visibilidad' },
@@ -1623,6 +1625,9 @@ function HRAdminTab() {
 
       {/* ── Competencias ── */}
       {section === 'competencias' && <CompetencyBuilder />}
+
+      {/* ── Objetivos por Nivel ── */}
+      {section === 'niveles' && <LevelObjectives />}
 
 
 

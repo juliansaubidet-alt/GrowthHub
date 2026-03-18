@@ -13,8 +13,7 @@ const NAV_MGMT = [
 ]
 
 const NAV_ADMIN = [
-  { id: 'settings',        label: 'Settings',           emoji: '⚙️' },
-  { id: 'levelobjectives', label: 'Objetivos por Nivel', emoji: '🎯' },
+  { id: 'settings', label: 'Settings', emoji: '⚙️' },
 ]
 
 function NavItem({ item, active, onClick }) {
