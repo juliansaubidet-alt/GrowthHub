@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ClipboardList, Plus, Trash2, CheckSquare, Square, Flag, BookOpen, Code2, Mic, Star, X, Calendar, LayoutList, ExternalLink, Link, Edit3 } from 'lucide-react'
+import { ClipboardList, Plus, Trash2, CheckSquare, Square, Flag, BookOpen, Code2, Mic, Star, X, Calendar, LayoutList, ExternalLink, Link, Edit3, BookMarked, Import } from 'lucide-react'
 import { useApp } from '../App'
 
 const RESOURCE_TYPES = [
@@ -22,10 +22,95 @@ function TypeBadge({ type }) {
   )
 }
 
+function CatalogModal({ catalog, onImport, onClose }) {
+  const [search, setSearch] = useState('')
+  const [imported, setImported] = useState(new Set())
+
+  const filtered = catalog.filter(c =>
+    !search || c.title.toLowerCase().includes(search.toLowerCase()) || c.skill?.toLowerCase().includes(search.toLowerCase())
+  )
+
+  const handleImport = (course) => {
+    onImport(course)
+    setImported(s => new Set([...s, course.id]))
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in">
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-amber-50 to-orange-50">
+          <div className="flex items-center gap-2">
+            <BookMarked size={18} className="text-amber-600" />
+            <h2 className="font-bold text-gray-900">Catálogo de Recursos</h2>
+            <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">{catalog.length} recursos</span>
+          </div>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition">
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* Search */}
+        <div className="px-6 py-3 border-b border-gray-100">
+          <input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Buscar por nombre o skill..."
+            className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-300"
+          />
+        </div>
+
+        {/* List */}
+        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3 scrollbar-thin">
+          {filtered.length === 0 && (
+            <p className="text-center text-gray-400 py-8 text-sm">Sin resultados</p>
+          )}
+          {filtered.map(course => {
+            const done = imported.has(course.id)
+            return (
+              <div key={course.id} className="flex items-start gap-4 p-4 rounded-xl border border-gray-100 hover:border-amber-200 hover:bg-amber-50/30 transition-all">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap mb-1">
+                    {course.skill && <span className="text-[10px] bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-medium">{course.skill}</span>}
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
+                      course.type === 'curso' ? 'bg-blue-100 text-blue-700' :
+                      course.type === 'libro' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-600'
+                    }`}>{course.type}</span>
+                  </div>
+                  <p className="text-sm font-semibold text-gray-800">{course.title}</p>
+                  {course.description && <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{course.description}</p>}
+                  {course.url && (
+                    <a href={course.url} target="_blank" rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-[10px] text-indigo-500 hover:text-indigo-700 mt-1">
+                      <ExternalLink size={9} /> Ver curso
+                    </a>
+                  )}
+                </div>
+                <button
+                  onClick={() => handleImport(course)}
+                  disabled={done}
+                  className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                    done
+                      ? 'bg-emerald-100 text-emerald-700 cursor-default'
+                      : 'bg-amber-600 text-white hover:bg-amber-700'
+                  }`}
+                >
+                  {done ? '✓ Agregado' : <><Import size={12} /> Agregar</>}
+                </button>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function ActionPlan() {
-  const { skills, actionItems, setActionItems } = useApp()
+  const { skills, actionItems, setActionItems, catalog } = useApp()
   const [view, setView] = useState('list')   // 'list' | 'weekly' | 'monthly'
   const [adding, setAdding] = useState(false)
+  const [showCatalog, setShowCatalog] = useState(false)
   const [filterSkill, setFilterSkill] = useState('all')
   const [newItem, setNewItem] = useState({
     skill: skills[0]?.name || '', type: 'curso', title: '', url: '', week: 1, done: false, milestone: false,
@@ -38,6 +123,19 @@ export default function ActionPlan() {
     setActionItems(prev => [...prev, { ...newItem, id: Date.now() }])
     setNewItem({ skill: skills[0]?.name || '', type: 'curso', title: '', url: '', week: 1, done: false, milestone: false })
     setAdding(false)
+  }
+
+  const importFromCatalog = (course) => {
+    setActionItems(prev => [...prev, {
+      id: Date.now(),
+      skill: course.skill || skills[0]?.name || '',
+      type: course.type,
+      title: course.title,
+      url: course.url || '',
+      week: 1,
+      done: false,
+      milestone: false,
+    }])
   }
 
   const saveUrl = (id) => {
@@ -86,12 +184,22 @@ export default function ActionPlan() {
           <h1 className="text-2xl font-bold text-gray-900">Plan de Acción</h1>
           <p className="text-gray-500 mt-1">Recursos, timeline y milestones para cerrar tus brechas</p>
         </div>
-        <button
-          onClick={() => setAdding(s => !s)}
-          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700 transition shadow-sm"
-        >
-          <Plus size={16} /> Agregar recurso
-        </button>
+        <div className="flex items-center gap-2">
+          {catalog?.length > 0 && (
+            <button
+              onClick={() => setShowCatalog(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-xl text-sm font-medium hover:bg-amber-600 transition shadow-sm"
+            >
+              <BookMarked size={16} /> Catálogo ({catalog.length})
+            </button>
+          )}
+          <button
+            onClick={() => setAdding(s => !s)}
+            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700 transition shadow-sm"
+          >
+            <Plus size={16} /> Agregar recurso
+          </button>
+        </div>
       </div>
 
       {/* Progress bar */}
@@ -420,6 +528,15 @@ export default function ActionPlan() {
             )
           })}
         </div>
+      )}
+
+      {/* Catalog Modal */}
+      {showCatalog && (
+        <CatalogModal
+          catalog={catalog || []}
+          onImport={importFromCatalog}
+          onClose={() => setShowCatalog(false)}
+        />
       )}
     </div>
   )

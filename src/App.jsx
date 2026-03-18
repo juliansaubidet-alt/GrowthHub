@@ -5,6 +5,7 @@ import Onboarding from './views/Onboarding'
 import Objectives from './views/Objectives'
 import SkillGap from './views/SkillGap'
 import ActionPlan from './views/ActionPlan'
+import Admin from './views/Admin'
 
 export const AppContext = createContext(null)
 
@@ -51,26 +52,16 @@ const defaultObjectives = [
 ]
 
 const defaultActionItems = [
-  {
-    id: 1, skill: 'Liderazgo', type: 'curso',
-    title: 'Engineering Management 101 — Coursera',
-    url: '', week: 1, done: false, milestone: true,
-  },
-  {
-    id: 2, skill: 'React', type: 'proyecto',
-    title: 'Construir app full-stack con React + Supabase',
-    url: '', week: 2, done: false, milestone: false,
-  },
-  {
-    id: 3, skill: 'Inglés', type: 'práctica',
-    title: 'Conversación con tutor nativo — iTalki (30 min/día)',
-    url: '', week: 1, done: true, milestone: false,
-  },
-  {
-    id: 4, skill: 'Negociación', type: 'libro',
-    title: 'Libro: Never Split the Difference — Chris Voss',
-    url: '', week: 3, done: false, milestone: true,
-  },
+  { id: 1, skill: 'Liderazgo',   type: 'curso',    title: 'Engineering Management 101 — Coursera',          url: '', week: 1, done: false, milestone: true },
+  { id: 2, skill: 'React',       type: 'proyecto',  title: 'Construir app full-stack con React + Supabase',  url: '', week: 2, done: false, milestone: false },
+  { id: 3, skill: 'Inglés',      type: 'práctica',  title: 'Conversación con tutor nativo — iTalki (30 min/día)', url: '', week: 1, done: true,  milestone: false },
+  { id: 4, skill: 'Negociación', type: 'libro',     title: 'Libro: Never Split the Difference — Chris Voss', url: '', week: 3, done: false, milestone: true },
+]
+
+const defaultCatalog = [
+  { id: 1, title: 'Desarrollo Web Full Stack', skill: 'React', type: 'curso', url: 'https://www.coderhouse.com/ar/carrera/fullstack-developer', description: 'Carrera completa de desarrollo web con React y Node.js.', addedBy: 'Líder Técnico', addedAt: '2026-03-01' },
+  { id: 2, title: 'JavaScript Moderno',         skill: 'React', type: 'curso', url: 'https://www.coderhouse.com/ar/cursos/javascript', description: 'Fundamentos y conceptos avanzados de JavaScript ES6+.', addedBy: 'Líder Técnico', addedAt: '2026-03-01' },
+  { id: 3, title: 'Liderazgo y Gestión de Equipos', skill: 'Liderazgo', type: 'curso', url: 'https://www.coderhouse.com/ar/', description: 'Herramientas prácticas para liderar equipos de alto rendimiento.', addedBy: 'Líder de Personas', addedAt: '2026-03-05' },
 ]
 
 function load(key, fallback) {
@@ -80,20 +71,37 @@ function load(key, fallback) {
   } catch { return fallback }
 }
 
+// Leader password (in a real app this would be server-side)
+export const LEADER_PASSWORD = 'lider2026'
+
 export default function App() {
-  const [activeView, setActiveView] = useState('dashboard')
-  const [sidebarOpen, setSidebarOpen] = useState(true)
-  const [profile, setProfile]       = useState(() => load('cp_profile',   defaultProfile))
-  const [skills, setSkills]         = useState(() => load('cp_skills',    defaultSkills))
-  const [objectives, setObjectives] = useState(() => load('cp_objectives', defaultObjectives))
-  const [actionItems, setActionItems] = useState(() => load('cp_actions', defaultActionItems))
+  const [activeView, setActiveView]     = useState('dashboard')
+  const [sidebarOpen, setSidebarOpen]   = useState(true)
+  const [leaderRole, setLeaderRole]     = useState(() => sessionStorage.getItem('cp_role') === 'leader')
+  const [profile, setProfile]           = useState(() => load('cp_profile',    defaultProfile))
+  const [skills, setSkills]             = useState(() => load('cp_skills',     defaultSkills))
+  const [objectives, setObjectives]     = useState(() => load('cp_objectives', defaultObjectives))
+  const [actionItems, setActionItems]   = useState(() => load('cp_actions',    defaultActionItems))
+  const [catalog, setCatalog]           = useState(() => load('cp_catalog',    defaultCatalog))
 
-  useEffect(() => { localStorage.setItem('cp_profile',    JSON.stringify(profile)) }, [profile])
-  useEffect(() => { localStorage.setItem('cp_skills',     JSON.stringify(skills)) },  [skills])
-  useEffect(() => { localStorage.setItem('cp_objectives', JSON.stringify(objectives)) }, [objectives])
-  useEffect(() => { localStorage.setItem('cp_actions',    JSON.stringify(actionItems)) }, [actionItems])
+  useEffect(() => { localStorage.setItem('cp_profile',    JSON.stringify(profile)) },      [profile])
+  useEffect(() => { localStorage.setItem('cp_skills',     JSON.stringify(skills)) },       [skills])
+  useEffect(() => { localStorage.setItem('cp_objectives', JSON.stringify(objectives)) },   [objectives])
+  useEffect(() => { localStorage.setItem('cp_actions',    JSON.stringify(actionItems)) },  [actionItems])
+  useEffect(() => { localStorage.setItem('cp_catalog',    JSON.stringify(catalog)) },      [catalog])
+  useEffect(() => {
+    if (leaderRole) sessionStorage.setItem('cp_role', 'leader')
+    else sessionStorage.removeItem('cp_role')
+  }, [leaderRole])
 
-  const ctx = { profile, setProfile, skills, setSkills, objectives, setObjectives, actionItems, setActionItems }
+  const ctx = {
+    profile, setProfile,
+    skills, setSkills,
+    objectives, setObjectives,
+    actionItems, setActionItems,
+    catalog, setCatalog,
+    leaderRole, setLeaderRole,
+  }
 
   const views = {
     dashboard:  <Dashboard />,
@@ -101,6 +109,7 @@ export default function App() {
     objectives: <Objectives />,
     skillgap:   <SkillGap />,
     actionplan: <ActionPlan />,
+    admin:      <Admin />,
   }
 
   return (

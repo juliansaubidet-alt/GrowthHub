@@ -1,4 +1,4 @@
-import { LayoutDashboard, User, Target, Activity, ClipboardList, ChevronLeft, ChevronRight, TrendingUp } from 'lucide-react'
+import { LayoutDashboard, User, Target, Activity, ClipboardList, ChevronLeft, ChevronRight, TrendingUp, ShieldCheck, Lock, LogOut } from 'lucide-react'
 import { useApp } from '../App'
 
 const NAV = [
@@ -10,7 +10,7 @@ const NAV = [
 ]
 
 export default function Sidebar({ activeView, setActiveView, open, setOpen }) {
-  const { profile } = useApp()
+  const { profile, leaderRole, setLeaderRole } = useApp()
 
   return (
     <aside
@@ -70,6 +70,50 @@ export default function Sidebar({ activeView, setActiveView, open, setOpen }) {
             </button>
           )
         })}
+
+        {/* Divider */}
+        <div className="my-2 border-t border-gray-700/60" />
+
+        {/* Admin button */}
+        <button
+          onClick={() => setActiveView('admin')}
+          title={!open ? 'Admin' : undefined}
+          className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 group ${
+            activeView === 'admin'
+              ? 'bg-amber-600 text-white shadow-sm'
+              : 'text-gray-500 hover:bg-gray-800 hover:text-amber-400'
+          } ${!open && 'justify-center'}`}
+        >
+          {leaderRole
+            ? <ShieldCheck size={18} className="shrink-0" />
+            : <Lock size={18} className="shrink-0" />
+          }
+          {open && (
+            <div className="min-w-0 text-left flex-1">
+              <p className="leading-tight truncate">Admin</p>
+              {activeView !== 'admin' && (
+                <p className="text-[10px] truncate group-hover:text-amber-500/70 text-gray-600">
+                  {leaderRole ? 'Sesión activa' : 'Solo líderes'}
+                </p>
+              )}
+            </div>
+          )}
+          {open && leaderRole && (
+            <span className="text-[9px] bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded font-bold shrink-0">LÍDER</span>
+          )}
+        </button>
+
+        {/* Logout leader */}
+        {leaderRole && (
+          <button
+            onClick={() => { setLeaderRole(false); if (activeView === 'admin') setActiveView('dashboard') }}
+            title={!open ? 'Cerrar sesión líder' : undefined}
+            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs text-gray-600 hover:text-red-400 hover:bg-gray-800 transition-all ${!open && 'justify-center'}`}
+          >
+            <LogOut size={14} className="shrink-0" />
+            {open && <span>Cerrar sesión líder</span>}
+          </button>
+        )}
       </nav>
 
       {/* Footer */}
