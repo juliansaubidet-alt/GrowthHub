@@ -827,20 +827,72 @@ function BibliotecaCompetencias() {
 
 /* ─── SALUD ORGANIZACIONAL ───────────────────────────────────────── */
 const TEAM_HEALTH = [
-  { team: 'Product Design',       engagement: 82, planActivo: 75, retencion: 91, riesgo: 'bajo'  },
-  { team: 'Frontend Engineering', engagement: 74, planActivo: 60, retencion: 84, riesgo: 'medio' },
-  { team: 'Backend Engineering',  engagement: 68, planActivo: 45, retencion: 78, riesgo: 'alto'  },
-  { team: 'Data & Analytics',     engagement: 79, planActivo: 70, retencion: 88, riesgo: 'bajo'  },
-  { team: 'People & Culture',     engagement: 88, planActivo: 90, retencion: 94, riesgo: 'bajo'  },
-  { team: 'Growth Marketing',     engagement: 65, planActivo: 40, retencion: 75, riesgo: 'alto'  },
+  {
+    team: 'Product Design', engagement: 82, planActivo: 75, retencion: 91, riesgo: 'bajo',
+    members: [
+      { name: 'Sofia Carro',    initials: 'SC', color: 'bg-h-100 text-h-700', role: 'Mid Designer',    plan: { active: true,  title: 'Avanzar a Senior Designer',     progress: 68, nextLevel: 'Senior' } },
+      { name: 'Ana Martínez',   initials: 'AM', color: 'bg-p-100 text-p-700', role: 'Senior Designer', plan: { active: true,  title: 'Avanzar a Lead Designer',       progress: 45, nextLevel: 'Lead'   } },
+      { name: 'Tomás Ríos',     initials: 'TR', color: 'bg-g-100 text-g-800', role: 'Junior Designer', plan: { active: true,  title: 'Avanzar a Mid Designer',        progress: 30, nextLevel: 'Mid'    } },
+      { name: 'Lucía Pérez',    initials: 'LP', color: 'bg-y-100 text-y-700', role: 'Junior Designer', plan: { active: false, title: 'Sin plan asignado',             progress: 0,  nextLevel: '—'      } },
+    ],
+  },
+  {
+    team: 'Frontend Engineering', engagement: 74, planActivo: 60, retencion: 84, riesgo: 'medio',
+    members: [
+      { name: 'Carlos Ruiz',    initials: 'CR', color: 'bg-h-100 text-h-700', role: 'Mid Frontend',    plan: { active: true,  title: 'Avanzar a Senior Frontend',     progress: 55, nextLevel: 'Senior' } },
+      { name: 'Martina Sol',    initials: 'MS', color: 'bg-t-100 text-t-700', role: 'Senior Frontend', plan: { active: true,  title: 'Especialización en Arquitectura', progress: 72, nextLevel: 'Lead'  } },
+      { name: 'Diego Vega',     initials: 'DV', color: 'bg-p-100 text-p-700', role: 'Junior Frontend', plan: { active: false, title: 'Sin plan asignado',             progress: 0,  nextLevel: '—'      } },
+      { name: 'Paula Méndez',   initials: 'PM', color: 'bg-r-100 text-r-600', role: 'Mid Frontend',    plan: { active: false, title: 'Sin plan asignado',             progress: 0,  nextLevel: '—'      } },
+      { name: 'Nicolás Vidal',  initials: 'NV', color: 'bg-g-100 text-g-800', role: 'Junior Frontend', plan: { active: true,  title: 'Avanzar a Mid Frontend',        progress: 22, nextLevel: 'Mid'    } },
+    ],
+  },
+  {
+    team: 'Backend Engineering', engagement: 68, planActivo: 45, retencion: 78, riesgo: 'alto',
+    members: [
+      { name: 'Rodrigo Blanco', initials: 'RB', color: 'bg-n-200 text-n-700', role: 'Mid Backend',     plan: { active: false, title: 'Sin plan asignado',             progress: 0,  nextLevel: '—'      } },
+      { name: 'Fernanda Ortiz', initials: 'FO', color: 'bg-h-100 text-h-700', role: 'Senior Backend',  plan: { active: true,  title: 'Tech Lead Backend',             progress: 40, nextLevel: 'Lead'   } },
+      { name: 'Gustavo Sosa',   initials: 'GS', color: 'bg-n-200 text-n-700', role: 'Junior Backend',  plan: { active: false, title: 'Sin plan asignado',             progress: 0,  nextLevel: '—'      } },
+      { name: 'Emilia Castro',  initials: 'EC', color: 'bg-p-100 text-p-700', role: 'Mid Backend',     plan: { active: true,  title: 'Avanzar a Senior Backend',      progress: 60, nextLevel: 'Senior' } },
+    ],
+  },
+  {
+    team: 'Data & Analytics', engagement: 79, planActivo: 70, retencion: 88, riesgo: 'bajo',
+    members: [
+      { name: 'Valentina Cruz', initials: 'VC', color: 'bg-t-100 text-t-700', role: 'Data Analyst',    plan: { active: true,  title: 'Avanzar a Senior Analyst',      progress: 65, nextLevel: 'Senior' } },
+      { name: 'Matías Leal',    initials: 'ML', color: 'bg-h-100 text-h-700', role: 'Senior Analyst',  plan: { active: true,  title: 'Data Science Lead',             progress: 50, nextLevel: 'Lead'   } },
+      { name: 'Camila Rojas',   initials: 'CR', color: 'bg-g-100 text-g-800', role: 'Junior Analyst',  plan: { active: false, title: 'Sin plan asignado',             progress: 0,  nextLevel: '—'      } },
+    ],
+  },
+  {
+    team: 'People & Culture', engagement: 88, planActivo: 90, retencion: 94, riesgo: 'bajo',
+    members: [
+      { name: 'Laura Romero',   initials: 'LR', color: 'bg-p-100 text-p-700', role: 'HR Specialist',   plan: { active: true,  title: 'Avanzar a HR Business Partner', progress: 80, nextLevel: 'Senior' } },
+      { name: 'Sebastián Gil',  initials: 'SG', color: 'bg-h-100 text-h-700', role: 'Talent Manager',  plan: { active: true,  title: 'Head of People',                progress: 55, nextLevel: 'Lead'   } },
+      { name: 'Agustina Mora',  initials: 'AM', color: 'bg-g-100 text-g-800', role: 'HR Analyst',      plan: { active: true,  title: 'Avanzar a HR Specialist',       progress: 70, nextLevel: 'Mid'    } },
+    ],
+  },
+  {
+    team: 'Growth Marketing', engagement: 65, planActivo: 40, retencion: 75, riesgo: 'alto',
+    members: [
+      { name: 'Ignacio Funes',  initials: 'IF', color: 'bg-n-200 text-n-700', role: 'Growth Analyst',  plan: { active: false, title: 'Sin plan asignado',             progress: 0,  nextLevel: '—'      } },
+      { name: 'Renata Lagos',   initials: 'RL', color: 'bg-y-100 text-y-700', role: 'Growth Manager',  plan: { active: true,  title: 'Head of Growth',                progress: 35, nextLevel: 'Lead'   } },
+      { name: 'Bruno Espejo',   initials: 'BE', color: 'bg-n-200 text-n-700', role: 'Junior Growth',   plan: { active: false, title: 'Sin plan asignado',             progress: 0,  nextLevel: '—'      } },
+      { name: 'Daniela Vera',   initials: 'DV', color: 'bg-r-100 text-r-600', role: 'Content Manager', plan: { active: false, title: 'Sin plan asignado',             progress: 0,  nextLevel: '—'      } },
+      { name: 'Tomás Herrera',  initials: 'TH', color: 'bg-h-100 text-h-700', role: 'SEO Specialist',  plan: { active: true,  title: 'Avanzar a Senior Growth',       progress: 28, nextLevel: 'Senior' } },
+    ],
+  },
 ]
 const RIESGO_BADGE = { bajo: 'bg-g-50 text-g-800', medio: 'bg-y-50 text-y-700', alto: 'bg-r-50 text-r-600' }
 
 function SaludOrganizacional() {
+  const [expanded, setExpanded] = useState(null)
+  const toggle = (team) => setExpanded(e => e === team ? null : team)
   const avg = (key) => Math.round(TEAM_HEALTH.reduce((a, t) => a + t[key], 0) / TEAM_HEALTH.length)
   const riesgoAlto = TEAM_HEALTH.filter(t => t.riesgo === 'alto').length
+
   return (
     <div className="flex flex-col gap-5">
+      {/* KPIs */}
       <div className="grid grid-cols-4 gap-4">
         {[
           { label: 'Engagement promedio', value: `${avg('engagement')}%`, sub: '+3% vs mes anterior',    color: 'text-h-600' },
@@ -855,58 +907,119 @@ function SaludOrganizacional() {
           </div>
         ))}
       </div>
+
+      {/* Accordion by team */}
       <div className="bg-white rounded-2xl shadow-4dp overflow-hidden">
         <div className="px-6 py-4 border-b border-n-100">
           <p className="text-[13px] font-semibold text-n-950">Salud por equipo</p>
-          <p className="text-[11px] text-n-600">Engagement, cobertura de planes y retención proyectada</p>
+          <p className="text-[11px] text-n-600">Hacé click en un equipo para ver sus integrantes y planes de carrera</p>
         </div>
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-n-100">
-              {['Equipo','Engagement','Plan activo','Retención proy.','Riesgo'].map(h => (
-                <th key={h} className="px-6 py-3 text-left text-[10px] font-semibold text-n-600 uppercase tracking-widest">{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {TEAM_HEALTH.map((t, i) => (
-              <tr key={i} className="border-b border-n-50 hover:bg-n-50 transition-colors">
-                <td className="px-6 py-3 text-[13px] font-semibold text-n-950">{t.team}</td>
-                <td className="px-6 py-3">
+        {/* Table header */}
+        <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_32px] items-center px-6 py-2.5 border-b border-n-100 bg-n-50">
+          {['Equipo','Engagement','Plan activo','Retención proy.','Riesgo',''].map(h => (
+            <span key={h} className="text-[10px] font-semibold text-n-600 uppercase tracking-widest">{h}</span>
+          ))}
+        </div>
+        {/* Rows */}
+        <div className="divide-y divide-n-50">
+          {TEAM_HEALTH.map(t => {
+            const open = expanded === t.team
+            const withPlan = t.members.filter(m => m.plan.active).length
+            return (
+              <div key={t.team}>
+                {/* Team row */}
+                <button
+                  onClick={() => toggle(t.team)}
+                  className={`w-full grid grid-cols-[2fr_1fr_1fr_1fr_1fr_32px] items-center px-6 py-3.5 text-left transition-colors ${open ? 'bg-h-50' : 'hover:bg-n-50'}`}
+                >
                   <div className="flex items-center gap-2">
-                    <div className="w-24 h-1.5 bg-n-100 rounded-full overflow-hidden">
-                      <div className="h-full rounded-full bar-fill" style={{ width: `${t.engagement}%`, backgroundColor: t.engagement >= 80 ? '#35a48e' : t.engagement >= 70 ? '#f59e0b' : '#ef4444' }} />
+                    {open ? <ChevronDown size={14} className="text-h-500 shrink-0" /> : <ChevronRight size={14} className="text-n-400 shrink-0" />}
+                    <span className="text-[13px] font-semibold text-n-950">{t.team}</span>
+                    <span className="text-[10px] text-n-500 font-medium">{t.members.length} personas</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-20 h-1.5 bg-n-100 rounded-full overflow-hidden">
+                      <div className="h-full rounded-full" style={{ width: `${t.engagement}%`, backgroundColor: t.engagement >= 80 ? '#35a48e' : t.engagement >= 70 ? '#f59e0b' : '#ef4444' }} />
                     </div>
                     <span className="text-[12px] text-n-600">{t.engagement}%</span>
                   </div>
-                </td>
-                <td className="px-6 py-3">
                   <div className="flex items-center gap-2">
-                    <div className="w-24 h-1.5 bg-n-100 rounded-full overflow-hidden">
-                      <div className="h-full bg-h-500 rounded-full bar-fill" style={{ width: `${t.planActivo}%` }} />
+                    <div className="w-20 h-1.5 bg-n-100 rounded-full overflow-hidden">
+                      <div className="h-full bg-h-500 rounded-full" style={{ width: `${t.planActivo}%` }} />
                     </div>
-                    <span className="text-[12px] text-n-600">{t.planActivo}%</span>
+                    <span className="text-[12px] text-n-600">{withPlan}/{t.members.length}</span>
                   </div>
-                </td>
-                <td className="px-6 py-3 text-[12px] text-n-600">{t.retencion}%</td>
-                <td className="px-6 py-3"><span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full capitalize ${RIESGO_BADGE[t.riesgo]}`}>{t.riesgo}</span></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                  <span className="text-[12px] text-n-600">{t.retencion}%</span>
+                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full capitalize w-fit ${RIESGO_BADGE[t.riesgo]}`}>{t.riesgo}</span>
+                  <span />
+                </button>
+
+                {/* Members panel */}
+                {open && (
+                  <div className="bg-h-50 border-t border-h-100 px-6 py-4 animate-fade-in">
+                    <div className="grid grid-cols-[2fr_2fr_1fr_80px] gap-2 px-3 pb-2">
+                      {['Integrante','Plan de carrera','Siguiente nivel','Progreso'].map(h => (
+                        <span key={h} className="text-[10px] font-semibold text-n-600 uppercase tracking-widest">{h}</span>
+                      ))}
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      {t.members.map(m => (
+                        <div key={m.name} className={`grid grid-cols-[2fr_2fr_1fr_80px] gap-2 items-center px-3 py-2.5 rounded-xl border ${m.plan.active ? 'bg-white border-n-100' : 'bg-n-50 border-n-100 opacity-75'}`}>
+                          {/* Member */}
+                          <div className="flex items-center gap-2.5">
+                            <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${m.color}`}>{m.initials}</div>
+                            <div className="min-w-0">
+                              <p className="text-[12px] font-semibold text-n-950 truncate">{m.name}</p>
+                              <p className="text-[10px] text-n-500 truncate">{m.role}</p>
+                            </div>
+                          </div>
+                          {/* Plan title */}
+                          <div className="flex items-center gap-1.5">
+                            {m.plan.active
+                              ? <span className="text-[12px] text-n-800 truncate">{m.plan.title}</span>
+                              : <span className="text-[11px] text-n-400 italic">Sin plan asignado</span>}
+                          </div>
+                          {/* Next level */}
+                          <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full w-fit ${m.plan.active ? 'bg-h-50 text-h-700' : 'bg-n-100 text-n-400'}`}>{m.plan.nextLevel}</span>
+                          {/* Progress */}
+                          {m.plan.active ? (
+                            <div className="flex items-center gap-1.5">
+                              <div className="flex-1 h-1.5 bg-n-100 rounded-full overflow-hidden">
+                                <div className="h-full bg-h-500 rounded-full" style={{ width: `${m.plan.progress}%` }} />
+                              </div>
+                              <span className="text-[11px] font-semibold text-h-600 w-7 text-right shrink-0">{m.plan.progress}%</span>
+                            </div>
+                          ) : (
+                            <span className="text-[11px] text-n-300">—</span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
       </div>
+
+      {/* Coverage bars */}
       <div className="bg-white rounded-2xl shadow-4dp p-5">
         <p className="text-[13px] font-semibold text-n-950 mb-4">Cobertura de planes por equipo</p>
         <div className="flex flex-col gap-3">
-          {TEAM_HEALTH.map(t => (
-            <div key={t.team} className="flex items-center gap-3">
-              <span className="text-[12px] text-n-800 w-44 truncate shrink-0">{t.team}</span>
-              <div className="flex-1 h-2 bg-n-100 rounded-full overflow-hidden">
-                <div className="h-full bg-h-500 rounded-full bar-fill" style={{ width: `${t.planActivo}%` }} />
+          {TEAM_HEALTH.map(t => {
+            const withPlan = t.members.filter(m => m.plan.active).length
+            const pct = Math.round((withPlan / t.members.length) * 100)
+            return (
+              <div key={t.team} className="flex items-center gap-3">
+                <span className="text-[12px] text-n-800 w-44 truncate shrink-0">{t.team}</span>
+                <div className="flex-1 h-2 bg-n-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-h-500 rounded-full bar-fill" style={{ width: `${pct}%` }} />
+                </div>
+                <span className="text-[12px] font-semibold text-n-950 w-16 text-right shrink-0">{withPlan}/{t.members.length}</span>
               </div>
-              <span className="text-[12px] font-semibold text-n-950 w-8 text-right shrink-0">{t.planActivo}%</span>
-            </div>
-          ))}
+            )
+          })}
         </div>
       </div>
     </div>
