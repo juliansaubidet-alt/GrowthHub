@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Lock, Eye, EyeOff, X } from 'lucide-react'
+import { Lock, Eye, EyeOff, X, Plus, Trash2, Edit3, ChevronDown, ChevronRight } from 'lucide-react'
+import { useApp } from '../App'
 
 const RESTRICTED_PASSWORD = 'humand2026'
 
@@ -474,10 +475,296 @@ const PROGRESSION = [
   { initials: 'PT', name: 'Paula Torres', role: 'Junior Designer',  pct: 30, status: 'In progress',     statusClass: 'bg-h-100 text-h-800',  est: 'Q4 2026', color: 'bg-p-100 text-p-500' },
 ]
 
-const REQUIRED_SKILLS = ['Visual Design', 'Prototyping', 'UX Research', 'Figma Advanced', 'Stakeholder Mgmt', 'Design Systems']
+/* ─── COMPETENCY FRAMEWORK BUILDER ─────────────────────────────── */
+const CAT_OPTIONS = ['Técnico', 'Liderazgo', 'Soft Skills', 'Estrategia', 'Otro']
+const CAT_COLORS  = { 'Técnico': 'bg-h-50 text-h-800', 'Liderazgo': 'bg-p-50 text-p-800', 'Soft Skills': 'bg-t-50 text-t-800', 'Estrategia': 'bg-y-50 text-y-700', 'Otro': 'bg-n-100 text-n-800' }
 
+function CompetencyBuilder() {
+  const { competencies, setCompetencies } = useApp()
+  const [selected, setSelected]   = useState(competencies[0]?.id ?? null)
+  const [editingComp, setEditingComp] = useState(null)   // id being edited, or 'new'
+  const [compDraft, setCompDraft] = useState({ name: '', category: 'Técnico', description: '' })
+  const [newSkillText, setNewSkillText] = useState('')
+  const [editingSkill, setEditingSkill] = useState(null) // { compId, skillId }
+  const [skillDraft, setSkillDraft]     = useState({ name: '', description: '' })
+
+  const selComp = competencies.find(c => c.id === selected)
+
+  /* Competency CRUD */
+  const saveComp = () => {
+    if (!compDraft.name.trim()) return
+    if (editingComp === 'new') {
+      const next = { ...compDraft, id: Date.now(), skills: [] }
+      setCompetencies(p => [...p, next])
+      setSelected(next.id)
+    } else {
+      setCompetencies(p => p.map(c => c.id === editingComp ? { ...c, ...compDraft } : c))
+    }
+    setEditingComp(null)
+  }
+  const deleteComp = (id) => {
+    setCompetencies(p => p.filter(c => c.id !== id))
+    if (selected === id) setSelected(competencies.find(c => c.id !== id)?.id ?? null)
+  }
+  const startNewComp = () => { setCompDraft({ name: '', category: 'Técnico', description: '' }); setEditingComp('new') }
+  const startEditComp = (c) => { setCompDraft({ name: c.name, category: c.category, description: c.description }); setEditingComp(c.id) }
+
+  /* Skill CRUD */
+  const addSkill = (compId) => {
+    if (!newSkillText.trim()) return
+    setCompetencies(p => p.map(c => c.id === compId
+      ? { ...c, skills: [...c.skills, { id: Date.now(), name: newSkillText.trim(), description: '' }] }
+      : c))
+    setNewSkillText('')
+  }
+  const deleteSkill = (compId, skillId) => {
+    setCompetencies(p => p.map(c => c.id === compId ? { ...c, skills: c.skills.filter(s => s.id !== skillId) } : c))
+  }
+  const saveSkill = () => {
+    if (!skillDraft.name.trim() || !editingSkill) return
+    setCompetencies(p => p.map(c => c.id === editingSkill.compId
+      ? { ...c, skills: c.skills.map(s => s.id === editingSkill.skillId ? { ...s, ...skillDraft } : s) }
+      : c))
+    setEditingSkill(null)
+  }
+
+  return (
+    <div className="flex gap-5">
+      {/* LEFT: list */}
+      <div style={{ width: 240 }} className="shrink-0">
+        <div className="bg-white rounded-2xl shadow-4dp overflow-hidden">
+          <div className="px-4 py-3.5 border-b border-n-100 flex items-center justify-between">
+            <span className="text-[13px] font-semibold text-n-950">Competencias</span>
+            <button onClick={startNewComp} className="h-7 px-2.5 bg-h-500 hover:bg-h-600 text-white rounded-lg text-[11px] font-semibold transition-colors flex items-center gap-1">
+              <Plus size={11} /> Nueva
+            </button>
+          </div>
+          <div className="p-2 flex flex-col gap-0.5">
+            {competencies.map(c => (
+              <div key={c.id} onClick={() => setSelected(c.id)}
+                className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-lg cursor-pointer transition-colors group ${selected === c.id ? 'bg-h-50' : 'hover:bg-n-50'}`}>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[12px] font-semibold text-n-950 truncate">{c.name}</p>
+                  <span className={`text-[10px] font-semibold px-1.5 py-0 rounded-full ${CAT_COLORS[c.category] || 'bg-n-100 text-n-800'}`}>{c.category}</span>
+                </div>
+                <span className="text-[10px] text-n-500 shrink-0">{c.skills.length} skills</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* RIGHT: detail / editor */}
+      <div className="flex-1 min-w-0 flex flex-col gap-4">
+        {/* Inline form for new/edit competency */}
+        {editingComp && (
+          <div className="bg-h-50 border-2 border-h-200 rounded-2xl p-5 animate-slide-in">
+            <p className="text-[13px] font-semibold text-h-800 mb-3">{editingComp === 'new' ? 'Nueva Competencia' : 'Editar Competencia'}</p>
+            <div className="grid grid-cols-2 gap-3 mb-3">
+              <div>
+                <label className="text-[10px] font-semibold text-n-700 uppercase tracking-wide mb-1 block">Nombre *</label>
+                <input value={compDraft.name} onChange={e => setCompDraft(d => ({ ...d, name: e.target.value }))} placeholder="Ej: Diseño Visual" className="input-humand" />
+              </div>
+              <div>
+                <label className="text-[10px] font-semibold text-n-700 uppercase tracking-wide mb-1 block">Categoría</label>
+                <select value={compDraft.category} onChange={e => setCompDraft(d => ({ ...d, category: e.target.value }))} className="input-humand">
+                  {CAT_OPTIONS.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+              <div className="col-span-2">
+                <label className="text-[10px] font-semibold text-n-700 uppercase tracking-wide mb-1 block">Descripción</label>
+                <input value={compDraft.description} onChange={e => setCompDraft(d => ({ ...d, description: e.target.value }))} placeholder="Descripción breve..." className="input-humand" />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setEditingComp(null)} className="h-8 px-3 text-[12px] font-semibold text-n-800 hover:text-n-950 rounded-lg hover:bg-n-100 transition">Cancelar</button>
+              <button onClick={saveComp} className="h-8 px-3 bg-h-500 hover:bg-h-600 text-white rounded-lg text-[12px] font-semibold transition">Guardar</button>
+            </div>
+          </div>
+        )}
+
+        {selComp && !editingComp && (
+          <div className="bg-white rounded-2xl shadow-4dp overflow-hidden">
+            <div className="px-6 py-4 border-b border-n-100 flex items-center justify-between">
+              <div>
+                <div className="flex items-center gap-2">
+                  <p className="text-[13px] font-semibold text-n-950">{selComp.name}</p>
+                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${CAT_COLORS[selComp.category] || 'bg-n-100 text-n-800'}`}>{selComp.category}</span>
+                </div>
+                {selComp.description && <p className="text-[11px] text-n-600 mt-0.5">{selComp.description}</p>}
+              </div>
+              <div className="flex gap-1">
+                <button onClick={() => startEditComp(selComp)} className="p-1.5 text-n-500 hover:text-h-600 hover:bg-h-50 rounded-lg transition"><Edit3 size={14} /></button>
+                <button onClick={() => deleteComp(selComp.id)} className="p-1.5 text-n-500 hover:text-r-600 hover:bg-r-50 rounded-lg transition"><Trash2 size={14} /></button>
+              </div>
+            </div>
+
+            <div className="p-5">
+              <p className="text-[10px] font-semibold text-n-600 uppercase tracking-widest mb-3">Habilidades ({selComp.skills.length})</p>
+              <div className="flex flex-col gap-2 mb-4">
+                {selComp.skills.length === 0 && <p className="text-xs text-n-500 italic">Sin habilidades aún. Agregá la primera abajo.</p>}
+                {selComp.skills.map(sk => (
+                  <div key={sk.id}>
+                    {editingSkill?.skillId === sk.id ? (
+                      <div className="flex gap-2 items-center bg-n-50 p-2 rounded-lg">
+                        <input value={skillDraft.name} onChange={e => setSkillDraft(d => ({ ...d, name: e.target.value }))} className="input-humand flex-1" style={{ height: 32 }} />
+                        <input value={skillDraft.description} onChange={e => setSkillDraft(d => ({ ...d, description: e.target.value }))} placeholder="Descripción" className="input-humand flex-1" style={{ height: 32 }} />
+                        <button onClick={saveSkill} className="h-8 px-3 bg-h-500 text-white rounded-lg text-[12px] font-semibold hover:bg-h-600 transition shrink-0">OK</button>
+                        <button onClick={() => setEditingSkill(null)} className="text-n-500 hover:text-n-950"><X size={14} /></button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-3 px-3 py-2 rounded-lg border border-n-100 hover:border-n-200 group transition-colors">
+                        <div className="w-1.5 h-1.5 rounded-full bg-h-400 shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[13px] font-semibold text-n-950">{sk.name}</p>
+                          {sk.description && <p className="text-[11px] text-n-600">{sk.description}</p>}
+                        </div>
+                        <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button onClick={() => { setEditingSkill({ compId: selComp.id, skillId: sk.id }); setSkillDraft({ name: sk.name, description: sk.description }) }}
+                            className="p-1 text-n-500 hover:text-h-600 rounded transition"><Edit3 size={12} /></button>
+                          <button onClick={() => deleteSkill(selComp.id, sk.id)}
+                            className="p-1 text-n-500 hover:text-r-600 rounded transition"><Trash2 size={12} /></button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+              {/* Add skill inline */}
+              <div className="flex gap-2">
+                <input value={newSkillText} onChange={e => setNewSkillText(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && addSkill(selComp.id)}
+                  placeholder="Nombre de nueva habilidad..." className="input-humand flex-1" style={{ height: 36 }} />
+                <button onClick={() => addSkill(selComp.id)}
+                  className="h-9 px-3 bg-h-500 hover:bg-h-600 text-white rounded-lg text-[12px] font-semibold transition flex items-center gap-1">
+                  <Plus size={13} /> Agregar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {!selComp && !editingComp && (
+          <div className="bg-white rounded-2xl shadow-4dp flex items-center justify-center py-16 text-n-500">
+            <p className="text-sm">Seleccioná una competencia o creá una nueva</p>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+/* ─── LEVEL OBJECTIVES BUILDER ──────────────────────────────────── */
+const LEVEL_COLORS = { L1: '#c5d4f8', L2: '#496be3', L3: '#3851d8', L4: '#29317f' }
+const AREA_OPTIONS = ['Técnico', 'Liderazgo', 'Colaboración', 'Visibilidad', 'Estrategia', 'Aprendizaje', 'Impacto']
+const AREA_BADGE   = { 'Técnico': 'bg-h-50 text-h-700', 'Liderazgo': 'bg-p-50 text-p-700', 'Colaboración': 'bg-t-50 text-t-700', 'Visibilidad': 'bg-s-100 text-s-800', 'Estrategia': 'bg-y-50 text-y-700', 'Aprendizaje': 'bg-g-50 text-g-800', 'Impacto': 'bg-r-50 text-r-600' }
+
+function LevelObjectivesBuilder() {
+  const { levelObjectives, setLevelObjectives } = useApp()
+  const [adding, setAdding]   = useState(null)   // level key of open form
+  const [draft, setDraft]     = useState({ area: 'Técnico', text: '' })
+  const [editingObj, setEditingObj] = useState(null) // { level, id }
+  const [editDraft, setEditDraft]   = useState({ area: 'Técnico', text: '' })
+
+  const addObj = (level) => {
+    if (!draft.text.trim()) return
+    setLevelObjectives(p => p.map(l => l.level === level
+      ? { ...l, objectives: [...l.objectives, { id: Date.now(), area: draft.area, text: draft.text.trim() }] }
+      : l))
+    setDraft({ area: 'Técnico', text: '' })
+    setAdding(null)
+  }
+  const deleteObj = (level, id) => {
+    setLevelObjectives(p => p.map(l => l.level === level ? { ...l, objectives: l.objectives.filter(o => o.id !== id) } : l))
+  }
+  const saveEdit = () => {
+    if (!editDraft.text.trim() || !editingObj) return
+    setLevelObjectives(p => p.map(l => l.level === editingObj.level
+      ? { ...l, objectives: l.objectives.map(o => o.id === editingObj.id ? { ...o, ...editDraft } : o) }
+      : l))
+    setEditingObj(null)
+  }
+
+  return (
+    <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
+      {levelObjectives.map(lvl => (
+        <div key={lvl.level} className="bg-white rounded-2xl shadow-4dp overflow-hidden flex flex-col">
+          {/* Level header */}
+          <div className="px-4 py-3 flex items-center gap-2 border-b border-n-100" style={{ borderTop: `3px solid ${LEVEL_COLORS[lvl.level]}` }}>
+            <span className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold text-white shrink-0" style={{ backgroundColor: LEVEL_COLORS[lvl.level] }}>{lvl.level}</span>
+            <div className="flex-1">
+              <p className="text-[13px] font-semibold text-n-950">{lvl.title}</p>
+              <p className="text-[10px] text-n-600">{lvl.objectives.length} objetivos</p>
+            </div>
+            <button onClick={() => { setAdding(lvl.level); setDraft({ area: 'Técnico', text: '' }) }}
+              className="w-6 h-6 rounded-lg bg-n-100 hover:bg-h-100 text-n-600 hover:text-h-600 flex items-center justify-center transition">
+              <Plus size={12} />
+            </button>
+          </div>
+
+          {/* Objectives list */}
+          <div className="flex-1 p-3 flex flex-col gap-2">
+            {lvl.objectives.length === 0 && <p className="text-[11px] text-n-400 italic text-center py-3">Sin objetivos aún</p>}
+            {lvl.objectives.map(obj => (
+              <div key={obj.id}>
+                {editingObj?.id === obj.id && editingObj?.level === lvl.level ? (
+                  <div className="bg-h-50 border border-h-100 rounded-lg p-2 flex flex-col gap-1.5">
+                    <select value={editDraft.area} onChange={e => setEditDraft(d => ({ ...d, area: e.target.value }))} className="input-humand text-xs" style={{ height: 28 }}>
+                      {AREA_OPTIONS.map(a => <option key={a} value={a}>{a}</option>)}
+                    </select>
+                    <textarea value={editDraft.text} onChange={e => setEditDraft(d => ({ ...d, text: e.target.value }))} rows={2} className="textarea-humand text-xs" style={{ minHeight: 52 }} />
+                    <div className="flex gap-1.5 justify-end">
+                      <button onClick={() => setEditingObj(null)} className="text-[11px] text-n-600 hover:text-n-950">Cancelar</button>
+                      <button onClick={saveEdit} className="h-6 px-2 bg-h-500 text-white rounded text-[11px] font-semibold hover:bg-h-600 transition">OK</button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-start gap-2 p-2 rounded-lg border border-n-100 hover:border-n-200 group transition-colors">
+                    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full shrink-0 mt-0.5 ${AREA_BADGE[obj.area] || 'bg-n-100 text-n-700'}`}>{obj.area}</span>
+                    <p className="flex-1 text-[12px] text-n-800 leading-relaxed">{obj.text}</p>
+                    <div className="flex gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity mt-0.5">
+                      <button onClick={() => { setEditingObj({ level: lvl.level, id: obj.id }); setEditDraft({ area: obj.area, text: obj.text }) }}
+                        className="p-0.5 text-n-400 hover:text-h-600 transition"><Edit3 size={11} /></button>
+                      <button onClick={() => deleteObj(lvl.level, obj.id)}
+                        className="p-0.5 text-n-400 hover:text-r-600 transition"><Trash2 size={11} /></button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+
+            {/* Add form inline */}
+            {adding === lvl.level && (
+              <div className="bg-h-50 border border-h-100 rounded-lg p-2 flex flex-col gap-1.5 animate-slide-in">
+                <select value={draft.area} onChange={e => setDraft(d => ({ ...d, area: e.target.value }))} className="input-humand text-xs" style={{ height: 28 }}>
+                  {AREA_OPTIONS.map(a => <option key={a} value={a}>{a}</option>)}
+                </select>
+                <textarea value={draft.text} onChange={e => setDraft(d => ({ ...d, text: e.target.value }))}
+                  placeholder="Describí el objetivo esperado para este nivel..."
+                  rows={2} className="textarea-humand text-xs" style={{ minHeight: 52 }} />
+                <div className="flex gap-1.5 justify-end">
+                  <button onClick={() => setAdding(null)} className="text-[11px] text-n-600 hover:text-n-950">Cancelar</button>
+                  <button onClick={() => addObj(lvl.level)} className="h-6 px-2 bg-h-500 text-white rounded text-[11px] font-semibold hover:bg-h-600 transition">Agregar</button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+/* ─── HR ADMIN TAB ──────────────────────────────────────────────── */
 function HRAdminTab() {
   const [selectedPath, setSelectedPath] = useState('sd')
+  const [section, setSection] = useState('paths') // 'paths' | 'competencias' | 'niveles'
+
+  const SUB_TABS = [
+    { id: 'paths',        label: '🗺️ Career Paths' },
+    { id: 'competencias', label: '🧩 Competencias' },
+    { id: 'niveles',      label: '🎯 Objetivos por Nivel' },
+  ]
 
   return (
     <div className="flex flex-col gap-5">
@@ -494,130 +781,135 @@ function HRAdminTab() {
         ))}
       </div>
 
-      <div className="flex gap-5">
-        {/* LEFT: career paths list */}
-        <div style={{ width: 240 }}>
-          <div className="bg-white rounded-2xl shadow-4dp">
-            <div className="px-5 py-3.5 border-b border-n-100 flex items-center justify-between">
-              <span className="text-[13px] font-semibold text-n-950">Career Paths</span>
-              <button className="h-8 px-3 bg-h-500 hover:bg-h-600 text-white rounded-lg text-[12px] font-semibold transition-colors">+ New</button>
-            </div>
-            <div className="p-3 flex flex-col gap-1">
-              {CAREER_PATHS.map(group => (
-                <div key={group.section}>
-                  <p className="text-[10px] font-semibold text-n-600 uppercase tracking-widest px-2 py-1.5">{group.section}</p>
-                  {group.items.map(item => (
-                    <button
-                      key={item.id}
-                      onClick={() => setSelectedPath(item.id)}
-                      className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left transition-colors ${selectedPath === item.id ? 'bg-p-50' : 'hover:bg-n-50'}`}
-                    >
-                      <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: item.dot }} />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[12px] font-semibold text-n-950 truncate">{item.label}</p>
-                        <p className="text-[10px] text-n-600">{item.level}</p>
-                      </div>
-                      <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-n-100 text-n-600 shrink-0">{item.count}</span>
-                    </button>
-                  ))}
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* RIGHT: role editor + progression */}
-        <div className="flex-1 flex flex-col gap-4 min-w-0">
-          {/* Role editor */}
-          <div className="bg-white rounded-2xl shadow-4dp">
-            <div className="px-6 py-4 border-b border-n-100 flex items-center justify-between">
-              <div>
-                <p className="text-[13px] font-semibold text-n-950">Senior Designer</p>
-                <p className="text-[11px] text-n-600">Design · Level 3 · 8 employees</p>
-              </div>
-              <div className="flex gap-2">
-                <button className="h-9 px-4 bg-white border border-n-200 shadow-4dp hover:shadow-8dp text-n-950 rounded-lg text-[13px] font-semibold transition-shadow">Edit path</button>
-                <button className="h-9 px-4 bg-h-500 hover:bg-h-600 text-white rounded-lg text-[13px] font-semibold transition-colors">Save changes</button>
-              </div>
-            </div>
-            <div className="p-5 flex flex-col gap-5">
-              <div>
-                <p className="text-[10px] font-semibold text-n-600 uppercase tracking-widest mb-3">Required Skills &amp; Competencies</p>
-                <div className="flex flex-wrap gap-2">
-                  {REQUIRED_SKILLS.map(s => (
-                    <div key={s} className="flex items-center gap-1 bg-h-50 text-h-800 text-[12px] font-medium px-2.5 py-1 rounded-lg">
-                      {s}
-                      <button className="text-h-400 hover:text-r-600 ml-1 leading-none">×</button>
-                    </div>
-                  ))}
-                  <button className="flex items-center gap-1 bg-n-100 text-n-600 text-[12px] font-medium px-2.5 py-1 rounded-lg hover:bg-n-200 transition-colors">+ Add skill</button>
-                </div>
-              </div>
-              <div>
-                <p className="text-[10px] font-semibold text-n-600 uppercase tracking-widest mb-3">Role Requirements</p>
-                <div className="grid grid-cols-3 gap-3">
-                  {[['Min. experience', '3+ years'], ['Perf. score threshold', '≥ 80%'], ['Approval required', 'Manager + HR']].map(([label, val]) => (
-                    <div key={label}>
-                      <p className="text-[11px] text-n-600 mb-1">{label}</p>
-                      <input className="input-humand" defaultValue={val} />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Progression table */}
-          <div className="bg-white rounded-2xl shadow-4dp">
-            <div className="px-6 py-4 border-b border-n-100 flex items-center justify-between">
-              <div>
-                <p className="text-[13px] font-semibold text-n-950">Employee Progression</p>
-                <p className="text-[11px] text-n-600">Targeting Senior Designer</p>
-              </div>
-              <button className="text-[12px] text-h-600 font-medium hover:underline">Export →</button>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-n-100">
-                    {['Employee', 'Current Role', 'Progress', 'Status', 'Est. Ready', ''].map(h => (
-                      <th key={h} className="px-5 py-3 text-left text-[10px] font-semibold text-n-600 uppercase tracking-widest">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {PROGRESSION.map((p, i) => (
-                    <tr key={i} className="border-b border-n-50 hover:bg-n-50 transition-colors">
-                      <td className="px-5 py-3">
-                        <div className="flex items-center gap-2.5">
-                          <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${p.color}`}>{p.initials}</div>
-                          <span className="text-[13px] font-medium text-n-950">{p.name}</span>
-                        </div>
-                      </td>
-                      <td className="px-5 py-3 text-[12px] text-n-600">{p.role}</td>
-                      <td className="px-5 py-3">
-                        <div className="flex items-center gap-2">
-                          <div className="w-20 h-1.5 bg-n-100 rounded-full overflow-hidden">
-                            <div className="h-full bg-h-500 rounded-full bar-fill" style={{ width: `${p.pct}%` }} />
-                          </div>
-                          <span className="text-[11px] text-n-600">{p.pct}%</span>
-                        </div>
-                      </td>
-                      <td className="px-5 py-3">
-                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${p.statusClass}`}>{p.status}</span>
-                      </td>
-                      <td className="px-5 py-3 text-[12px] text-n-600">{p.est}</td>
-                      <td className="px-5 py-3">
-                        <button className="text-[12px] text-h-600 font-medium hover:underline">View</button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
+      {/* Sub-navigation */}
+      <div className="flex items-center gap-1 bg-n-100 p-1 rounded-xl w-fit">
+        {SUB_TABS.map(t => (
+          <button key={t.id} onClick={() => setSection(t.id)}
+            className={`h-8 px-4 rounded-lg text-[13px] transition-all ${section === t.id ? 'bg-white shadow-4dp text-n-950 font-semibold' : 'text-n-600 hover:text-n-950'}`}>
+            {t.label}
+          </button>
+        ))}
       </div>
+
+      {/* ── Career Paths ── */}
+      {section === 'paths' && (
+        <div className="flex gap-5">
+          <div style={{ width: 240 }}>
+            <div className="bg-white rounded-2xl shadow-4dp">
+              <div className="px-5 py-3.5 border-b border-n-100 flex items-center justify-between">
+                <span className="text-[13px] font-semibold text-n-950">Career Paths</span>
+                <button className="h-8 px-3 bg-h-500 hover:bg-h-600 text-white rounded-lg text-[12px] font-semibold transition-colors">+ New</button>
+              </div>
+              <div className="p-3 flex flex-col gap-1">
+                {CAREER_PATHS.map(group => (
+                  <div key={group.section}>
+                    <p className="text-[10px] font-semibold text-n-600 uppercase tracking-widest px-2 py-1.5">{group.section}</p>
+                    {group.items.map(item => (
+                      <button key={item.id} onClick={() => setSelectedPath(item.id)}
+                        className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left transition-colors ${selectedPath === item.id ? 'bg-p-50' : 'hover:bg-n-50'}`}>
+                        <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: item.dot }} />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[12px] font-semibold text-n-950 truncate">{item.label}</p>
+                          <p className="text-[10px] text-n-600">{item.level}</p>
+                        </div>
+                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-n-100 text-n-600 shrink-0">{item.count}</span>
+                      </button>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className="flex-1 flex flex-col gap-4 min-w-0">
+            <div className="bg-white rounded-2xl shadow-4dp">
+              <div className="px-6 py-4 border-b border-n-100 flex items-center justify-between">
+                <div>
+                  <p className="text-[13px] font-semibold text-n-950">Senior Designer</p>
+                  <p className="text-[11px] text-n-600">Design · Level 3 · 8 employees</p>
+                </div>
+                <div className="flex gap-2">
+                  <button className="h-9 px-4 bg-white border border-n-200 shadow-4dp hover:shadow-8dp text-n-950 rounded-lg text-[13px] font-semibold transition-shadow">Edit path</button>
+                  <button className="h-9 px-4 bg-h-500 hover:bg-h-600 text-white rounded-lg text-[13px] font-semibold transition-colors">Save changes</button>
+                </div>
+              </div>
+              <div className="p-5 flex flex-col gap-5">
+                <div>
+                  <p className="text-[10px] font-semibold text-n-600 uppercase tracking-widest mb-3">Required Skills &amp; Competencies</p>
+                  <div className="flex flex-wrap gap-2">
+                    {['Visual Design','Prototyping','UX Research','Figma Advanced','Stakeholder Mgmt','Design Systems'].map(s => (
+                      <div key={s} className="flex items-center gap-1 bg-h-50 text-h-800 text-[12px] font-medium px-2.5 py-1 rounded-lg">
+                        {s}<button className="text-h-400 hover:text-r-600 ml-1 leading-none">×</button>
+                      </div>
+                    ))}
+                    <button className="flex items-center gap-1 bg-n-100 text-n-600 text-[12px] font-medium px-2.5 py-1 rounded-lg hover:bg-n-200 transition-colors">+ Add skill</button>
+                  </div>
+                </div>
+                <div>
+                  <p className="text-[10px] font-semibold text-n-600 uppercase tracking-widest mb-3">Role Requirements</p>
+                  <div className="grid grid-cols-3 gap-3">
+                    {[['Min. experience','3+ years'],['Perf. score threshold','≥ 80%'],['Approval required','Manager + HR']].map(([label, val]) => (
+                      <div key={label}>
+                        <p className="text-[11px] text-n-600 mb-1">{label}</p>
+                        <input className="input-humand" defaultValue={val} />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white rounded-2xl shadow-4dp">
+              <div className="px-6 py-4 border-b border-n-100 flex items-center justify-between">
+                <div>
+                  <p className="text-[13px] font-semibold text-n-950">Employee Progression</p>
+                  <p className="text-[11px] text-n-600">Targeting Senior Designer</p>
+                </div>
+                <button className="text-[12px] text-h-600 font-medium hover:underline">Export →</button>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-n-100">
+                      {['Employee','Current Role','Progress','Status','Est. Ready',''].map(h => (
+                        <th key={h} className="px-5 py-3 text-left text-[10px] font-semibold text-n-600 uppercase tracking-widest">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {PROGRESSION.map((p, i) => (
+                      <tr key={i} className="border-b border-n-50 hover:bg-n-50 transition-colors">
+                        <td className="px-5 py-3">
+                          <div className="flex items-center gap-2.5">
+                            <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${p.color}`}>{p.initials}</div>
+                            <span className="text-[13px] font-medium text-n-950">{p.name}</span>
+                          </div>
+                        </td>
+                        <td className="px-5 py-3 text-[12px] text-n-600">{p.role}</td>
+                        <td className="px-5 py-3">
+                          <div className="flex items-center gap-2">
+                            <div className="w-20 h-1.5 bg-n-100 rounded-full overflow-hidden">
+                              <div className="h-full bg-h-500 rounded-full bar-fill" style={{ width: `${p.pct}%` }} />
+                            </div>
+                            <span className="text-[11px] text-n-600">{p.pct}%</span>
+                          </div>
+                        </td>
+                        <td className="px-5 py-3"><span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${p.statusClass}`}>{p.status}</span></td>
+                        <td className="px-5 py-3 text-[12px] text-n-600">{p.est}</td>
+                        <td className="px-5 py-3"><button className="text-[12px] text-h-600 font-medium hover:underline">View</button></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Competencias ── */}
+      {section === 'competencias' && <CompetencyBuilder />}
+
+      {/* ── Objetivos por Nivel ── */}
+      {section === 'niveles' && <LevelObjectivesBuilder />}
     </div>
   )
 }
