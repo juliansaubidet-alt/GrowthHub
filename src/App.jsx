@@ -151,7 +151,7 @@ const VIEW_LABELS = {
   reviews:     'Reviews',
   meetings:    '1:1s',
   settings:    'Settings',
-  admin: 'Admin',
+  admin:       'Admin',
 }
 
 export default function App() {
