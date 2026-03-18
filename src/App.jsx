@@ -93,7 +93,7 @@ const defaultCompetencies = [
 
 const defaultLevelObjectives = [
   {
-    level: 'L1', title: 'Junior', color: '#c5d4f8',
+    level: 'L1', title: 'Junior', color: '#c5d4f8', role: '',
     objectives: [
       { id: 101, area: 'Técnico',       text: 'Completar tareas asignadas con supervisión mínima' },
       { id: 102, area: 'Colaboración',  text: 'Participar activamente en reviews de diseño/código' },
@@ -101,7 +101,7 @@ const defaultLevelObjectives = [
     ],
   },
   {
-    level: 'L2', title: 'Mid', color: '#496be3',
+    level: 'L2', title: 'Mid', color: '#496be3', role: '',
     objectives: [
       { id: 201, area: 'Técnico',       text: 'Liderar features end-to-end de mediana complejidad' },
       { id: 202, area: 'Colaboración',  text: 'Mentoría activa de al menos 1 persona junior' },
@@ -109,7 +109,7 @@ const defaultLevelObjectives = [
     ],
   },
   {
-    level: 'L3', title: 'Senior', color: '#3851d8',
+    level: 'L3', title: 'Senior', color: '#3851d8', role: '',
     objectives: [
       { id: 301, area: 'Técnico',       text: 'Definir estándares y mejores prácticas para el equipo' },
       { id: 302, area: 'Liderazgo',     text: 'Liderar proyectos cross-funcionales con autonomía' },
@@ -117,7 +117,7 @@ const defaultLevelObjectives = [
     ],
   },
   {
-    level: 'L4', title: 'Lead', color: '#29317f',
+    level: 'L4', title: 'Lead', color: '#29317f', role: '',
     objectives: [
       { id: 401, area: 'Liderazgo',     text: 'Gestionar y desarrollar un equipo de 3+ personas' },
       { id: 402, area: 'Estrategia',    text: 'Definir visión técnica/de diseño a 12+ meses' },
