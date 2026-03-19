@@ -837,13 +837,7 @@ function EmployeeEmptyState({ onStart }) {
           {/* Illustration */}
           <div className="relative mb-6">
             <div className="w-24 h-24 rounded-full bg-h-50 flex items-center justify-center">
-              <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
-                <circle cx="12" cy="36" r="6" stroke="#9db8f3" strokeWidth="2.5" fill="#f1f4fd" />
-                <circle cx="24" cy="20" r="6" stroke="#496be3" strokeWidth="2.5" fill="#e8edfc" />
-                <circle cx="36" cy="36" r="6" stroke="#cbcdd6" strokeWidth="2.5" fill="#f8f8fa" strokeDasharray="4 2" />
-                <line x1="17.5" y1="33" x2="21" y2="23" stroke="#9db8f3" strokeWidth="2" strokeLinecap="round" />
-                <line x1="27" y1="23" x2="30.5" y2="33" stroke="#cbcdd6" strokeWidth="2" strokeLinecap="round" strokeDasharray="3 2" />
-              </svg>
+              <TrendingUp size={40} className="text-h-400" />
             </div>
             <div className="absolute -top-1 -right-1 w-7 h-7 rounded-full bg-y-100 flex items-center justify-center">
               <Sparkles size={14} className="text-y-600" />
