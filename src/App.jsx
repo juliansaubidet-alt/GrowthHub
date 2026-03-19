@@ -1,16 +1,7 @@
 import { useState, useEffect, createContext, useContext } from 'react'
 import Sidebar from './components/Sidebar'
 import Topbar from './components/Topbar'
-import Home from './views/Home'
 import CareerPath from './views/CareerPath'
-import People from './views/People'
-import Performance from './views/Performance'
-import Learning from './views/Learning'
-import Goals from './views/Goals'
-import Reviews from './views/Reviews'
-import Meetings from './views/Meetings'
-import Settings from './views/Settings'
-import Admin from './views/Admin'
 
 export const AppContext = createContext(null)
 
@@ -142,20 +133,11 @@ function load(key, fallback) {
 export const LEADER_PASSWORD = 'lider2026'
 
 const VIEW_LABELS = {
-  home:        'Home',
   careerpath:  'Career Path',
-  people:      'People',
-  performance: 'Performance',
-  learning:    'Learning',
-  goals:       'Goals',
-  reviews:     'Reviews',
-  meetings:    '1:1s',
-  settings:    'Settings',
-  admin:       'Admin',
 }
 
 export default function App() {
-  const [activeView, setActiveView]   = useState('home')
+  const [activeView, setActiveView]   = useState('careerpath')
   const [leaderRole, setLeaderRole]   = useState(() => sessionStorage.getItem('cp_role') === 'leader')
   const [profile, setProfile]         = useState(() => load('cp_profile',    defaultProfile))
   const [skills, setSkills]           = useState(() => load('cp_skills',     defaultSkills))
@@ -194,16 +176,7 @@ export default function App() {
   }
 
   const views = {
-    home:        <Home />,
     careerpath:  <CareerPath />,
-    people:      <People />,
-    performance: <Performance />,
-    learning:    <Learning />,
-    goals:       <Goals />,
-    reviews:     <Reviews />,
-    meetings:    <Meetings />,
-    settings: <Settings />,
-    admin:    <Admin />,
   }
 
   return (
