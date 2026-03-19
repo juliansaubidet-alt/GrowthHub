@@ -1189,11 +1189,11 @@ function EmployeeTab() {
 
 /* ─── MANAGER TAB ───────────────────────────────────────────────── */
 const TEAM = [
-  { initials: 'AG', name: 'Ana García',   role: 'Product Designer',   badge: 'bg-y-100 text-y-700',  badgeLabel: 'Revisión',       color: 'bg-h-100 text-h-600' },
-  { initials: 'LH', name: 'Luis Herrera', role: 'Frontend Engineer',  badge: 'bg-h-100 text-h-800',  badgeLabel: 'En progreso',    color: 'bg-t-100 text-t-800' },
-  { initials: 'MT', name: 'Mia Torres',   role: 'UX Researcher',      badge: 'bg-h-100 text-h-800',  badgeLabel: 'Meta definida',  color: 'bg-p-100 text-p-800' },
-  { initials: 'CR', name: 'Carlos Ruiz',  role: 'Backend Engineer',   badge: 'bg-h-100 text-h-800',  badgeLabel: 'En progreso',    color: 'bg-g-100 text-g-800' },
-  { initials: 'SL', name: 'Sara López',   role: 'Data Analyst',       badge: 'bg-n-100 text-n-600',  badgeLabel: 'Sin plan',       color: 'bg-y-100 text-y-700' },
+  { initials: 'AG', name: 'Ana García',   role: 'Product Designer',   badge: 'bg-y-100 text-y-700',  badgeLabel: 'En revisión',  color: 'bg-h-100 text-h-600' },
+  { initials: 'LH', name: 'Luis Herrera', role: 'Frontend Engineer',  badge: 'bg-g-100 text-g-700',  badgeLabel: 'Aprobado',     color: 'bg-t-100 text-t-800' },
+  { initials: 'MT', name: 'Mia Torres',   role: 'UX Researcher',      badge: 'bg-y-100 text-y-700',  badgeLabel: 'En revisión',  color: 'bg-p-100 text-p-800' },
+  { initials: 'CR', name: 'Carlos Ruiz',  role: 'Backend Engineer',   badge: 'bg-n-100 text-n-600',  badgeLabel: 'Sin plan',     color: 'bg-g-100 text-g-800' },
+  { initials: 'SL', name: 'Sara López',   role: 'Data Analyst',       badge: 'bg-n-100 text-n-600',  badgeLabel: 'Sin plan',     color: 'bg-y-100 text-y-700' },
 ]
 
 const ANA_HARD_SKILLS = ['Visual Design', 'Prototyping', 'UX Research', 'Design Systems', 'Figma Advanced']
