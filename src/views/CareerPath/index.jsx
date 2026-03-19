@@ -11,7 +11,7 @@ const ACTOR_TABS = [
 ]
 
 function getAllowedTabs(role) {
-  if (role === 'hr_admin') return ['employee', 'manager', 'hradmin']
+  if (role === 'hr_admin') return ['hradmin']
   if (role === 'manager') return ['employee', 'manager']
   return ['employee']
 }

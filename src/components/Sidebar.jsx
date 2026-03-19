@@ -86,11 +86,11 @@ export default function Sidebar({ activeView, setActiveView }) {
       <div className="h-14 flex items-center px-5 border-b border-n-200 shrink-0">
         {isAdmin ? (
           <div className="flex items-center gap-2">
-            <img src="/src/assets/hu-logo.jpeg" alt="hu" className="h-7 w-auto rounded-lg" />
+            <img src="/hu-logo.jpeg" alt="hu" className="h-7 w-auto rounded-lg" />
             <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-p-100 text-p-800 tracking-wide">Admin</span>
           </div>
         ) : (
-          <img src="/src/assets/humand-logo.png" alt="humand" className="h-6 w-auto" />
+          <img src="/humand-logo.png" alt="humand" className="h-6 w-auto" />
         )}
       </div>
 
