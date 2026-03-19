@@ -83,7 +83,7 @@ export default function ManagerTab() {
   const member = team[selectedIdx]
   const plan = currentPlan
   const planStatus = plan?.status || null
-  const isEditable = planStatus && planStatus !== 'approved'
+  const isEditable = planStatus === 'changes_requested'
 
   const refetchPlan = async () => {
     if (!member) return
@@ -622,12 +622,9 @@ export default function ManagerTab() {
 
             {/* Manager actions - only when not approved */}
             {isEditable && <div className="bg-white rounded-2xl shadow-4dp">
-              <div className="px-6 py-4 border-b border-n-100">
-                <p className="text-[13px] font-semibold text-n-950">Acciones del manager</p>
-              </div>
               <div className="p-5 flex flex-col gap-5">
                 <div>
-                  <p className="text-[10px] font-semibold text-n-600 uppercase tracking-widest mb-2">Sugerir cambios</p>
+                  <p className="text-[10px] font-semibold text-n-600 uppercase tracking-widest mb-2">Agregar feedback</p>
                   <textarea
                     className="textarea-humand"
                     placeholder={`Compartí tu feedback sobre el plan de carrera de ${member.name}...`}
