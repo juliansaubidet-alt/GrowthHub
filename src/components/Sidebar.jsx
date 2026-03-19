@@ -1,4 +1,5 @@
 import { TrendingUp } from 'lucide-react'
+import { useApp } from '../App'
 
 const NAV_MAIN = [
   { id: 'home',        label: 'Home',        emoji: '🏠' },
@@ -43,6 +44,7 @@ function NavItem({ item, active, onClick }) {
 }
 
 export default function Sidebar({ activeView, setActiveView, leaderRole, setLeaderRole, profile }) {
+  const { isHrAdmin } = useApp()
   const name = profile?.role ? profile.role : 'Sofia Carro'
   const role = profile?.industry ? profile.industry : 'Product Designer · Mid'
 
@@ -57,7 +59,14 @@ export default function Sidebar({ activeView, setActiveView, leaderRole, setLead
     <aside className="w-60 bg-white border-r border-n-200 flex flex-col shrink-0 h-screen sticky top-0 z-50">
       {/* Logo */}
       <div className="h-14 flex items-center px-5 border-b border-n-200 shrink-0">
-        <img src="/src/assets/humand-logo.png" alt="humand" className="h-6 w-auto" />
+        {isHrAdmin ? (
+          <div className="flex items-center gap-2">
+            <img src="/src/assets/hu-logo.jpeg" alt="hu" className="h-7 w-auto rounded-lg" />
+            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-p-100 text-p-800 tracking-wide">Admin</span>
+          </div>
+        ) : (
+          <img src="/src/assets/humand-logo.png" alt="humand" className="h-6 w-auto" />
+        )}
       </div>
 
       {/* Nav */}

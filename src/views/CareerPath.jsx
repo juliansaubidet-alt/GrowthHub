@@ -1,8 +1,15 @@
 import { useState, useEffect } from 'react'
 import { useApp } from '../App'
-import { Lock, Eye, EyeOff, X, Plus, Trash2, Edit3, ChevronDown, ChevronRight } from 'lucide-react'
+import { Lock, Eye, EyeOff, X, Plus, Trash2, Edit3, ChevronDown, ChevronRight, Check, Target, Map, TrendingUp, TrendingDown, ArrowLeftRight, BarChart3, Rocket, BookOpen, Palette, Microscope, Lightbulb, Users, Compass, GraduationCap, Search, Mic, Zap, Film, FileText, LayoutGrid, Building2, Briefcase, Globe, Brain, Gem, MessageCircle, CheckCircle, RotateCw, Award, AlertTriangle, AlertCircle, Heart, Clock, Sparkles, CornerDownLeft, AlertOctagon, RefreshCw } from 'lucide-react'
 
 /* ─── shared helpers ─────────────────────────────────────────────── */
+const COURSE_ICON_MAP = {
+  'Curso': BookOpen, 'Certificación': Award, 'Workshop': Users,
+}
+function CourseIcon({ type, size = 20 }) {
+  const Icon = COURSE_ICON_MAP[type] || BookOpen
+  return <Icon size={size} className="text-n-500" />
+}
 const CIRCUMFERENCE = 2 * Math.PI * 32
 
 function ProgressRing({ pct, color = '#496be3', size = 80, r = 32, stroke = 7 }) {
@@ -51,7 +58,7 @@ const PATH_NODES = [
 
 const CONNECTORS = ['solid', 'solid', 'dashed', 'dotted']
 
-function PathNode({ node, filter }) {
+function PathNode({ node, filter, thirdPerson = false }) {
   if (filter !== 'Todo') {
     if (filter === 'Vertical' && node.type === 'lateral') return null
     if (filter === 'Lateral' && node.type !== 'lateral' && node.type !== 'current') return null
@@ -64,12 +71,12 @@ function PathNode({ node, filter }) {
         {node.current && (
           <span className="flex items-center gap-1 text-[10px] font-bold text-h-600 bg-h-50 border border-h-200 px-2 py-0.5 rounded-full whitespace-nowrap">
             <span className="w-1.5 h-1.5 rounded-full bg-h-500 shrink-0" />
-            Estás aquí
+            {thirdPerson ? 'Está aquí' : 'Estás aquí'}
           </span>
         )}
         {node.type === 'target' && (
           <span className="flex items-center gap-1 text-[10px] font-bold text-g-700 bg-g-50 border border-g-200 px-2 py-0.5 rounded-full whitespace-nowrap">
-            🎯 Tu meta
+            <Target size={10} /> {thirdPerson ? 'Su meta' : 'Tu meta'}
           </span>
         )}
       </div>
@@ -81,10 +88,10 @@ function PathNode({ node, filter }) {
           background: node.done ? '#f5fdf6' : node.current ? '#f1f4fd' : node.type === 'lateral' ? '#f4f2ff' : '#fff',
         }}
       >
-        {node.done && <span className="text-g-600 text-lg">✓</span>}
+        {node.done && <Check size={18} className="text-g-600" />}
         {node.current && <span className="text-h-600 text-sm font-bold">L2</span>}
         {node.type === 'target' && <span className="text-h-400 text-sm font-bold">{node.level || 'L3'}</span>}
-        {node.locked && <span className="text-n-400 text-lg">🔒</span>}
+        {node.locked && <Lock size={14} className="text-n-400" />}
         {node.type === 'lateral' && <span className="text-p-500 text-sm font-bold">L2</span>}
       </div>
       <p className={`text-[11px] font-semibold text-center leading-tight max-w-[72px] ${node.current ? 'text-h-700' : node.type === 'target' ? 'text-n-950' : 'text-n-950'}`}>{node.label}</p>
@@ -244,9 +251,9 @@ const TERM_CONFIG = {
 }
 
 const PRIORITY_CONFIG = {
-  1: { label: 'Esencial',     badge: 'bg-r-100 text-r-600',  star: '★★★' },
+  1: { label: 'Esencial',     badge: 'bg-g-100 text-g-700',  star: '★★★' },
   2: { label: 'Recomendado',  badge: 'bg-h-100 text-h-800',  star: '★★☆' },
-  3: { label: 'Opcional',     badge: 'bg-n-100 text-n-600',  star: '★☆☆' },
+  3: { label: 'Opcional',     badge: 'bg-p-100 text-p-700',  star: '★☆☆' },
 }
 
 function CareerPlanWizard({ onComplete, onCancel }) {
@@ -357,15 +364,15 @@ function CareerPlanWizard({ onComplete, onCancel }) {
                 <p className="text-[10px] font-semibold text-n-600 uppercase tracking-widest mb-3">Tipo de crecimiento</p>
                 <div className="flex gap-3">
                   {[
-                    { val: 'vertical', label: 'Crecimiento vertical', desc: 'Ascender dentro de tu área actual', emoji: '📈' },
-                    { val: 'lateral',  label: 'Movimiento lateral',   desc: 'Explorar un área o rol diferente',  emoji: '↔️' },
+                    { val: 'vertical', label: 'Crecimiento vertical', desc: 'Ascender dentro de tu área actual', icon: TrendingUp },
+                    { val: 'lateral',  label: 'Movimiento lateral',   desc: 'Explorar un área o rol diferente',  icon: ArrowLeftRight },
                   ].map(opt => (
                     <button
                       key={opt.val}
                       onClick={() => { set('growthType', opt.val); handleRouteChange('') }}
                       className={`flex-1 flex items-start gap-3 p-4 rounded-xl border-2 text-left transition-all ${form.growthType === opt.val ? 'border-h-500 bg-h-50' : 'border-n-200 hover:border-n-300'}`}
                     >
-                      <span className="text-xl shrink-0 mt-0.5">{opt.emoji}</span>
+                      <opt.icon size={20} className={`shrink-0 mt-0.5 ${form.growthType === opt.val ? 'text-h-600' : 'text-n-500'}`} />
                       <div>
                         <p className={`text-[13px] font-semibold ${form.growthType === opt.val ? 'text-h-700' : 'text-n-950'}`}>{opt.label}</p>
                         <p className="text-[11px] text-n-600 mt-0.5">{opt.desc}</p>
@@ -463,7 +470,7 @@ function CareerPlanWizard({ onComplete, onCancel }) {
                       <button key={skill} onClick={() => toggleSkill(skill)}
                         className={`text-[12px] font-medium px-3 py-1.5 rounded-lg border transition-all ${sel ? 'bg-h-500 text-white border-h-500' : 'bg-white text-n-700 border-n-200 hover:border-h-400'}`}
                       >
-                        {sel ? '✓ ' : ''}{skill}
+                        {sel && <Check size={12} className="inline mr-1" />}{skill}
                       </button>
                     )
                   })}
@@ -486,7 +493,7 @@ function CareerPlanWizard({ onComplete, onCancel }) {
                       <button key={skill} onClick={() => toggleSoftSkill(skill)}
                         className={`text-[12px] font-medium px-3 py-1.5 rounded-lg border transition-all ${sel ? 'bg-t-500 text-white border-t-500' : 'bg-white text-n-700 border-n-200 hover:border-t-400'}`}
                       >
-                        {sel ? '✓ ' : ''}{skill}
+                        {sel && <Check size={12} className="inline mr-1" />}{skill}
                       </button>
                     )
                   })}
@@ -641,7 +648,7 @@ function CareerPlanWizard({ onComplete, onCancel }) {
                       onClick={() => toggleCourse(course.id)}
                       className={`flex items-center gap-3 p-3.5 rounded-xl border-2 text-left transition-all ${sel ? 'border-h-500 bg-h-50' : 'border-n-200 hover:border-n-300 bg-white'}`}
                     >
-                      <div className="w-10 h-10 rounded-xl bg-white shadow-4dp flex items-center justify-center text-lg shrink-0">{course.emoji}</div>
+                      <div className="w-10 h-10 rounded-xl bg-white shadow-4dp flex items-center justify-center shrink-0"><CourseIcon type={course.type} /></div>
                       <div className="flex-1 min-w-0">
                         <p className="text-[10px] font-semibold text-n-500 uppercase tracking-widest">{course.type}</p>
                         <p className="text-[13px] font-semibold text-n-950 mt-0.5">{course.title}</p>
@@ -650,7 +657,7 @@ function CareerPlanWizard({ onComplete, onCancel }) {
                       <div className="flex items-center gap-2 shrink-0">
                         <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${pcfg.badge}`}>{pcfg.label}</span>
                         <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all shrink-0 ${sel ? 'bg-h-500 border-h-500' : 'border-n-300'}`}>
-                          {sel && <span className="text-white text-[9px]">✓</span>}
+                          {sel && <Check size={10} className="text-white" />}
                         </div>
                       </div>
                     </button>
@@ -677,7 +684,7 @@ function CareerPlanWizard({ onComplete, onCancel }) {
                 <div className="bg-n-50 rounded-xl p-4">
                   <p className="text-[10px] font-semibold text-n-600 uppercase tracking-widest mb-2">Ruta profesional</p>
                   <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${form.growthType === 'vertical' ? 'bg-h-100 text-h-800' : 'bg-p-100 text-p-800'}`}>
-                    {form.growthType === 'vertical' ? '↑ Vertical' : '↔ Lateral'}
+                    {form.growthType === 'vertical' ? 'Vertical' : 'Lateral'}
                   </span>
                   <p className="text-[14px] font-bold text-n-950 mt-2">{selectedRoute?.label || '—'}</p>
                   <p className="text-[12px] text-n-600 mt-0.5">Duración: {form.duration || '—'}</p>
@@ -783,7 +790,7 @@ function CareerPlanWizard({ onComplete, onCancel }) {
               onClick={() => onComplete(form)}
               className="h-9 px-5 bg-h-500 hover:bg-h-600 text-white rounded-lg text-[13px] font-semibold transition-colors"
             >
-              Enviar plan ✓
+              <span className="flex items-center gap-1.5">Enviar plan <Check size={14} /></span>
             </button>
           )}
         </div>
@@ -800,10 +807,9 @@ function EmployeeEmptyState({ onStart }) {
         <div className="rounded-2xl p-5 text-white" style={{ background: 'linear-gradient(140deg, #3851d8 0%, #29317f 100%)' }}>
           <p className="text-[9px] font-semibold uppercase tracking-widest opacity-65 mb-2">Current Role</p>
           <p className="text-lg font-bold mb-0.5">Product Designer</p>
-          <p className="text-[12px] opacity-75 mb-3">Design Team · Mid-level</p>
+          <p className="text-[12px] opacity-75 mb-3">Design Team</p>
           <div className="flex gap-2">
             <span className="text-[10px] font-semibold bg-white bg-opacity-20 px-2.5 py-1 rounded-full">2.5 yr tenure</span>
-            <span className="text-[10px] font-semibold bg-white bg-opacity-20 px-2.5 py-1 rounded-full">Score 87%</span>
           </div>
         </div>
 
@@ -811,14 +817,14 @@ function EmployeeEmptyState({ onStart }) {
           <p className="text-[10px] font-semibold text-n-600 uppercase tracking-widest mb-3">Lo que vas a desbloquear</p>
           <div className="flex flex-col gap-3">
             {[
-              { emoji: '🗺️', text: 'Tu mapa de carrera personalizado' },
-              { emoji: '📊', text: 'Análisis de brechas de skills' },
-              { emoji: '🎯', text: 'Objetivos de desarrollo claros' },
-              { emoji: '🚀', text: 'Acciones recomendadas por rol' },
-            ].map((item, i) => (
+              { icon: Map,       text: 'Tu mapa de carrera personalizado' },
+              { icon: BarChart3, text: 'Análisis de brechas de skills' },
+              { icon: Target,    text: 'Objetivos de desarrollo claros' },
+              { icon: Rocket,    text: 'Acciones recomendadas por rol' },
+            ].map(({ icon: Icon, text }, i) => (
               <div key={i} className="flex items-center gap-2.5">
-                <span className="text-base shrink-0">{item.emoji}</span>
-                <p className="text-[12px] text-n-700">{item.text}</p>
+                <Icon size={16} className="text-h-500 shrink-0" />
+                <p className="text-[12px] text-n-700">{text}</p>
               </div>
             ))}
           </div>
@@ -840,7 +846,7 @@ function EmployeeEmptyState({ onStart }) {
               </svg>
             </div>
             <div className="absolute -top-1 -right-1 w-7 h-7 rounded-full bg-y-100 flex items-center justify-center">
-              <span className="text-sm">✨</span>
+              <Sparkles size={14} className="text-y-600" />
             </div>
           </div>
 
@@ -853,7 +859,7 @@ function EmployeeEmptyState({ onStart }) {
           <div className="flex items-center gap-2 bg-n-50 border border-n-200 rounded-full px-4 py-2 mb-8">
             <div className="w-2.5 h-2.5 rounded-full bg-h-500 shrink-0" />
             <span className="text-[12px] font-semibold text-n-950">Rol actual:</span>
-            <span className="text-[12px] text-n-700">Product Designer · L2</span>
+            <span className="text-[12px] text-n-700">Product Designer</span>
           </div>
 
           <button
@@ -878,7 +884,7 @@ function SuccessScreen({ onView }) {
       <div className="bg-white rounded-2xl shadow-4dp p-12 flex flex-col items-center text-center max-w-md w-full">
         <div className="w-20 h-20 rounded-full bg-g-50 flex items-center justify-center mb-5">
           <div className="w-12 h-12 rounded-full bg-g-100 flex items-center justify-center">
-            <span className="text-g-600 text-2xl">✓</span>
+            <Check size={24} className="text-g-600" />
           </div>
         </div>
         <h2 className="text-[18px] font-bold text-n-950 mb-2">¡Plan enviado con éxito!</h2>
@@ -997,13 +1003,12 @@ function EmployeeTab() {
         <div className="rounded-2xl p-5 text-white" style={{ background: 'linear-gradient(140deg, #3851d8 0%, #29317f 100%)' }}>
           <p className="text-[9px] font-semibold uppercase tracking-widest opacity-65 mb-2">Rol Actual</p>
           <p className="text-lg font-bold mb-0.5">Product Designer</p>
-          <p className="text-[12px] opacity-75 mb-1">Design Team · Mid-level</p>
+          <p className="text-[12px] opacity-75 mb-1">Design Team</p>
           {selectedMgr && (
             <p className="text-[11px] opacity-60 mb-2">Manager: {selectedMgr.label}</p>
           )}
           <div className="flex gap-2 flex-wrap">
             <span className="text-[10px] font-semibold bg-white bg-opacity-20 px-2.5 py-1 rounded-full">2.5 yr tenure</span>
-            <span className="text-[10px] font-semibold bg-white bg-opacity-20 px-2.5 py-1 rounded-full">Score 87%</span>
           </div>
         </div>
 
@@ -1067,7 +1072,7 @@ function EmployeeTab() {
         {/* Pending approval alert */}
         {planStatus === 'revision' && (
           <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-y-50 border border-y-200">
-            <span className="text-y-600 text-base shrink-0">⏳</span>
+            <Clock size={16} className="text-y-600 shrink-0" />
             <p className="text-[12px] text-y-800">
               Tu plan de carrera está <span className="font-semibold">pendiente de aprobación</span> por {selectedMgr ? <span className="font-semibold">{selectedMgr.label}</span> : 'tu líder o manager directo'}.
             </p>
@@ -1131,7 +1136,7 @@ function EmployeeTab() {
                   className={`flex items-start gap-2.5 p-2 rounded-lg text-left w-full transition-colors ${locked ? 'cursor-not-allowed opacity-60' : done ? 'bg-h-50 hover:bg-h-100' : 'hover:bg-n-50'}`}
                 >
                   <div className={`w-4 h-4 rounded shrink-0 mt-0.5 flex items-center justify-center transition-colors ${done && !locked ? 'bg-h-500' : 'border-2 border-n-300'}`}>
-                    {done && !locked && <span className="text-white text-[9px]">✓</span>}
+                    {done && !locked && <Check size={10} className="text-white" />}
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-[12px] leading-tight text-n-950">{obj.text}</p>
@@ -1155,7 +1160,7 @@ function EmployeeTab() {
                   const pcfg = PRIORITY_CONFIG[c.priority] || PRIORITY_CONFIG[3]
                   return (
                     <div key={c.id} className="flex items-center gap-3 p-3 rounded-xl bg-n-50 hover:bg-h-50 transition-colors cursor-pointer">
-                      <div className="w-10 h-10 rounded-xl bg-white shadow-4dp flex items-center justify-center text-lg shrink-0">{c.emoji}</div>
+                      <div className="w-10 h-10 rounded-xl bg-white shadow-4dp flex items-center justify-center shrink-0"><CourseIcon type={c.type} /></div>
                       <div className="flex-1 min-w-0">
                         <p className="text-[10px] font-semibold text-n-500 uppercase tracking-widest">{c.type}</p>
                         <p className="text-[13px] font-semibold text-n-950 mt-0.5">{c.title}</p>
@@ -1220,6 +1225,38 @@ function ManagerTab() {
   const [suggestion, setSuggestion]     = useState('')
   const [savedSuggestion, setSavedSuggestion] = useState('')
 
+  // Editable lists
+  const [hardSkills, setHardSkills] = useState([...ANA_HARD_SKILLS])
+  const [softSkills, setSoftSkills] = useState([...ANA_SOFT_SKILLS])
+  const [goals, setGoals]           = useState([...ANA_GOALS])
+  const [courses, setCourses]       = useState([...ANA_COURSES])
+
+  const [hardInput, setHardInput]   = useState('')
+  const [softInput, setSoftInput]   = useState('')
+  const [goalInput, setGoalInput]   = useState('')
+  const [goalTerm, setGoalTerm]     = useState('short')
+  const [showAddCourse, setShowAddCourse] = useState(false)
+  const [courseSearch, setCourseSearch]   = useState('')
+  const [pendingCourse, setPendingCourse] = useState(null)
+
+  const allAvailableCourses = Object.values(COURSES_BY_ROUTE).flat().concat(DEFAULT_COURSES)
+    .filter((c, i, arr) => arr.findIndex(x => x.id === c.id) === i)
+
+  const filteredAvailable = allAvailableCourses.filter(c =>
+    !courses.find(x => x.id === c.id) &&
+    (c.title.toLowerCase().includes(courseSearch.toLowerCase()) || c.type.toLowerCase().includes(courseSearch.toLowerCase()))
+  )
+
+  const addHardSkill = () => { const t = hardInput.trim(); if (t && !hardSkills.includes(t)) setHardSkills(p => [...p, t]); setHardInput('') }
+  const addSoftSkill = () => { const t = softInput.trim(); if (t && !softSkills.includes(t)) setSoftSkills(p => [...p, t]); setSoftInput('') }
+  const addGoal = () => { const t = goalInput.trim(); if (!t) return; setGoals(p => [...p, { done: false, text: t, term: goalTerm }]); setGoalInput('') }
+  const addCourse = (c, priority) => {
+    setCourses(p => [...p, { ...c, priority }])
+    setCourseSearch('')
+    setPendingCourse(null)
+    setShowAddCourse(false)
+  }
+
   const handleSuggest = () => {
     if (!suggestion.trim()) return
     setSavedSuggestion(suggestion)
@@ -1268,7 +1305,7 @@ function ManagerTab() {
             {/* Alert banner — pending approval */}
             {anaStatus === 'revision' && (
               <div className="rounded-2xl bg-y-50 border border-y-200 px-5 py-4 flex items-start gap-3">
-                <span className="text-xl shrink-0 mt-0.5">⚠️</span>
+                <AlertTriangle size={18} className="text-y-600 shrink-0 mt-0.5" />
                 <div className="flex-1 min-w-0">
                   <p className="text-[13px] font-semibold text-n-950">Ana García envió un plan de carrera para revisión</p>
                   <p className="text-[12px] text-n-600 mt-0.5">Objetivo: Senior Designer · Enviado 15 Mar 2026</p>
@@ -1277,11 +1314,11 @@ function ManagerTab() {
                   <button
                     onClick={() => setAnaStatus('aprobado')}
                     className="h-8 px-3 text-[12px] font-semibold border border-g-600 text-g-800 rounded-lg hover:bg-g-50 transition-colors"
-                  >✓ Aprobar</button>
+                  ><Check size={13} className="inline mr-1" />Aprobar</button>
                   <button
                     onClick={() => setShowSuggest(true)}
                     className="h-8 px-3 text-[12px] font-semibold border border-y-600 text-y-700 rounded-lg hover:bg-y-50 transition-colors"
-                  >↩ Sugerir cambios</button>
+                  ><CornerDownLeft size={13} className="inline mr-1" />Sugerir cambios</button>
                 </div>
               </div>
             )}
@@ -1289,7 +1326,7 @@ function ManagerTab() {
             {/* Approved banner */}
             {anaStatus === 'aprobado' && (
               <div className="rounded-2xl bg-g-50 border border-g-200 px-5 py-3.5 flex items-center gap-3">
-                <span className="text-xl shrink-0">✅</span>
+                <CheckCircle size={18} className="text-g-600 shrink-0" />
                 <p className="text-[13px] font-semibold text-g-800">Plan de carrera de Ana García aprobado</p>
               </div>
             )}
@@ -1297,7 +1334,7 @@ function ManagerTab() {
             {/* Changes requested banner */}
             {anaStatus === 'cambios' && (
               <div className="rounded-2xl bg-r-50 border border-r-200 px-5 py-4 flex items-start gap-3">
-                <span className="text-xl shrink-0 mt-0.5">↩</span>
+                <CornerDownLeft size={18} className="text-r-500 shrink-0 mt-0.5" />
                 <div className="flex-1 min-w-0">
                   <p className="text-[13px] font-semibold text-r-700">Se solicitaron cambios al plan de carrera</p>
                   {savedSuggestion && (
@@ -1369,7 +1406,7 @@ function ManagerTab() {
                     }
                     items.push(
                       <div key={node.id} className="flex flex-col items-center shrink-0">
-                        <PathNode node={node} filter="Todo" />
+                        <PathNode node={node} filter="Todo" thirdPerson />
                       </div>
                     )
                     return items
@@ -1382,23 +1419,45 @@ function ManagerTab() {
             <div className="bg-white rounded-2xl shadow-4dp">
               <div className="px-6 py-4 border-b border-n-100">
                 <p className="text-[13px] font-semibold text-n-950">Skills</p>
-                <p className="text-[11px] text-n-600">{ANA_HARD_SKILLS.length + ANA_SOFT_SKILLS.length} habilidades para el rol</p>
+                <p className="text-[11px] text-n-600">{hardSkills.length + softSkills.length} habilidades para el rol</p>
               </div>
               <div className="p-4 flex flex-col gap-4">
                 <div>
                   <p className="text-[10px] font-semibold text-n-600 uppercase tracking-widest mb-2">Habilidades técnicas</p>
                   <div className="flex flex-wrap gap-1.5">
-                    {ANA_HARD_SKILLS.map(s => (
-                      <span key={s} className="text-[11px] font-medium bg-h-50 text-h-800 border border-h-200 px-2.5 py-1 rounded-lg">{s}</span>
+                    {hardSkills.map(s => (
+                      <div key={s} className="flex items-center gap-1 text-[11px] font-medium bg-h-50 text-h-800 border border-h-200 px-2.5 py-1 rounded-lg">
+                        {s}<button onClick={() => setHardSkills(p => p.filter(x => x !== s))} className="text-h-400 hover:text-r-600 ml-1"><X size={9} /></button>
+                      </div>
                     ))}
+                    <div className="flex items-center gap-1">
+                      <input
+                        className="h-7 px-2 text-[11px] border border-n-200 rounded-lg outline-none focus:border-h-400 w-24 placeholder:text-n-400"
+                        placeholder="+ Agregar..."
+                        value={hardInput}
+                        onChange={e => setHardInput(e.target.value)}
+                        onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addHardSkill() } }}
+                      />
+                    </div>
                   </div>
                 </div>
                 <div className="pt-3 border-t border-n-100">
                   <p className="text-[10px] font-semibold text-n-600 uppercase tracking-widest mb-2">Soft skills</p>
                   <div className="flex flex-wrap gap-1.5">
-                    {ANA_SOFT_SKILLS.map(s => (
-                      <span key={s} className="text-[11px] font-medium bg-t-50 text-t-800 border border-t-200 px-2.5 py-1 rounded-lg">{s}</span>
+                    {softSkills.map(s => (
+                      <div key={s} className="flex items-center gap-1 text-[11px] font-medium bg-t-50 text-t-800 border border-t-200 px-2.5 py-1 rounded-lg">
+                        {s}<button onClick={() => setSoftSkills(p => p.filter(x => x !== s))} className="text-t-400 hover:text-r-600 ml-1"><X size={9} /></button>
+                      </div>
                     ))}
+                    <div className="flex items-center gap-1">
+                      <input
+                        className="h-7 px-2 text-[11px] border border-n-200 rounded-lg outline-none focus:border-h-400 w-24 placeholder:text-n-400"
+                        placeholder="+ Agregar..."
+                        value={softInput}
+                        onChange={e => setSoftInput(e.target.value)}
+                        onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addSoftSkill() } }}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1408,23 +1467,40 @@ function ManagerTab() {
             <div className="bg-white rounded-2xl shadow-4dp">
               <div className="px-6 py-4 border-b border-n-100">
                 <p className="text-[13px] font-semibold text-n-950">Objetivos</p>
-                <p className="text-[11px] text-n-600">{ANA_GOALS.filter(g => g.done).length} de {ANA_GOALS.length} completados</p>
+                <p className="text-[11px] text-n-600">{goals.filter(g => g.done).length} de {goals.length} completados</p>
               </div>
               <div className="p-4 flex flex-col gap-1.5">
-                {ANA_GOALS.map((g, i) => {
+                {goals.map((g, i) => {
                   const cfg = TERM_CONFIG[g.term]
                   return (
-                    <div key={i} className={`flex items-start gap-2.5 p-2 rounded-lg ${g.done ? 'bg-h-50' : ''}`}>
+                    <div key={i} className={`flex items-start gap-2.5 p-2 rounded-lg group ${g.done ? 'bg-h-50' : ''}`}>
                       <div className={`w-4 h-4 rounded shrink-0 mt-0.5 flex items-center justify-center ${g.done ? 'bg-h-500' : 'border-2 border-n-300'}`}>
-                        {g.done && <span className="text-white text-[9px]">✓</span>}
+                        {g.done && <Check size={10} className="text-white" />}
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="text-[12px] leading-tight text-n-950">{g.text}</p>
                         <span className={`inline-block text-[10px] font-semibold px-1.5 py-0.5 rounded-full mt-1 ${cfg.badge}`}>{cfg.label}</span>
                       </div>
+                      <button onClick={() => setGoals(p => p.filter((_, j) => j !== i))} className="opacity-0 group-hover:opacity-100 transition-opacity text-n-400 hover:text-r-600 shrink-0 mt-0.5"><X size={12} /></button>
                     </div>
                   )
                 })}
+                {/* Add goal */}
+                <div className="flex items-center gap-2 mt-1 pt-2 border-t border-n-100">
+                  <select className="h-8 px-2 text-[11px] border border-n-200 rounded-lg outline-none focus:border-h-400 bg-white shrink-0" value={goalTerm} onChange={e => setGoalTerm(e.target.value)}>
+                    <option value="short">Corto</option>
+                    <option value="medium">Mediano</option>
+                    <option value="long">Largo</option>
+                  </select>
+                  <input
+                    className="flex-1 h-8 px-2.5 text-[12px] border border-n-200 rounded-lg outline-none focus:border-h-400 placeholder:text-n-400"
+                    placeholder="Nuevo objetivo..."
+                    value={goalInput}
+                    onChange={e => setGoalInput(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addGoal() } }}
+                  />
+                  <button onClick={addGoal} className="h-8 px-3 bg-h-500 hover:bg-h-600 text-white rounded-lg text-[12px] font-semibold transition-colors shrink-0"><Plus size={13} /></button>
+                </div>
               </div>
             </div>
 
@@ -1432,20 +1508,87 @@ function ManagerTab() {
             <div className="bg-white rounded-2xl shadow-4dp">
               <div className="px-6 py-4 border-b border-n-100 flex items-center justify-between">
                 <p className="text-[13px] font-semibold text-n-950">Cursos y aprendizaje</p>
-                <span className="text-[11px] text-n-500">{ANA_COURSES.length} cursos</span>
+                <button onClick={() => setShowAddCourse(o => !o)} className="h-7 px-3 bg-h-500 hover:bg-h-600 text-white rounded-lg text-[11px] font-semibold transition-colors flex items-center gap-1"><Plus size={11} /> Agregar</button>
               </div>
               <div className="p-4 flex flex-col gap-2.5">
-                {ANA_COURSES.map(c => {
+                {showAddCourse && (
+                  <div className="relative mb-1">
+                    <div className="fixed inset-0 z-10" onClick={() => { setShowAddCourse(false); setCourseSearch(''); setPendingCourse(null) }} />
+                    <div className="relative z-20 border border-h-200 rounded-xl overflow-hidden shadow-8dp bg-white">
+                      {pendingCourse ? (
+                        <>
+                          <div className="flex items-center gap-2 px-3 py-2 border-b border-n-100">
+                            <button onClick={() => setPendingCourse(null)} className="text-n-400 hover:text-n-700 shrink-0"><ChevronDown size={13} className="rotate-90" /></button>
+                            <span className="text-[12px] font-semibold text-n-950 flex-1 truncate">{pendingCourse.title}</span>
+                          </div>
+                          <div className="p-3">
+                            <p className="text-[11px] text-n-500 mb-2.5 text-center">¿Cómo clasificás este curso?</p>
+                            <div className="flex flex-col gap-2">
+                              {Object.entries(PRIORITY_CONFIG).map(([p, cfg]) => (
+                                <button
+                                  key={p}
+                                  onClick={() => addCourse(pendingCourse, Number(p))}
+                                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl border border-n-200 hover:border-h-300 hover:bg-h-50 transition-all text-left"
+                                >
+                                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${cfg.badge}`}>{cfg.label}</span>
+                                  <span className="text-[11px] text-n-600">
+                                    {p === '1' ? 'Obligatorio para avanzar al siguiente nivel' : p === '2' ? 'Mejora el perfil, pero no es bloqueante' : 'Complementario, a criterio del colaborador'}
+                                  </span>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="flex items-center gap-2 px-3 py-2 border-b border-n-100">
+                            <Search size={13} className="text-n-400 shrink-0" />
+                            <input
+                              autoFocus
+                              className="flex-1 text-[12px] outline-none placeholder:text-n-400 bg-transparent"
+                              placeholder="Buscar curso..."
+                              value={courseSearch}
+                              onChange={e => setCourseSearch(e.target.value)}
+                            />
+                            <button onClick={() => { setShowAddCourse(false); setCourseSearch('') }} className="text-n-400 hover:text-n-700"><X size={13} /></button>
+                          </div>
+                          <div className="max-h-64 overflow-y-auto">
+                            {filteredAvailable.length === 0 && (
+                              <p className="text-[12px] text-n-500 text-center py-4">Sin resultados</p>
+                            )}
+                            {filteredAvailable.map(c => (
+                              <button
+                                key={c.id}
+                                onClick={() => setPendingCourse(c)}
+                                className="w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-n-50 transition-colors"
+                              >
+                                <div className="w-8 h-8 rounded-lg bg-n-100 flex items-center justify-center shrink-0"><CourseIcon type={c.type} size={15} /></div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-[10px] font-semibold text-n-500 uppercase tracking-widest">{c.type}</p>
+                                  <p className="text-[12px] font-semibold text-n-950 truncate">{c.title}</p>
+                                  <p className="text-[11px] text-n-600">{c.provider} · {c.duration}</p>
+                                </div>
+                                <ChevronDown size={12} className="text-n-400 -rotate-90 shrink-0" />
+                              </button>
+                            ))}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                )}
+                {courses.map(c => {
                   const pcfg = PRIORITY_CONFIG[c.priority] || PRIORITY_CONFIG[3]
                   return (
-                    <div key={c.id} className="flex items-center gap-3 p-3 rounded-xl bg-n-50">
-                      <div className="w-10 h-10 rounded-xl bg-white shadow-4dp flex items-center justify-center text-lg shrink-0">{c.emoji}</div>
+                    <div key={c.id} className="flex items-center gap-3 p-3 rounded-xl bg-n-50 group">
+                      <div className="w-10 h-10 rounded-xl bg-white shadow-4dp flex items-center justify-center shrink-0"><CourseIcon type={c.type} /></div>
                       <div className="flex-1 min-w-0">
                         <p className="text-[10px] font-semibold text-n-500 uppercase tracking-widest">{c.type}</p>
                         <p className="text-[13px] font-semibold text-n-950 mt-0.5">{c.title}</p>
                         <p className="text-[11px] text-n-600">{c.provider} · {c.duration}</p>
                       </div>
                       <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${pcfg.badge}`}>{pcfg.label}</span>
+                      <button onClick={() => setCourses(p => p.filter(x => x.id !== c.id))} className="opacity-0 group-hover:opacity-100 transition-opacity text-n-400 hover:text-r-600 shrink-0"><X size={13} /></button>
                     </div>
                   )
                 })}
@@ -1459,14 +1602,7 @@ function ManagerTab() {
               </div>
               <div className="p-5 flex flex-col gap-5">
                 <div>
-                  <p className="text-[10px] font-semibold text-n-600 uppercase tracking-widest mb-2">Asignar oportunidades</p>
-                  <div className="flex gap-2">
-                    <button className="h-9 px-4 bg-white border border-n-200 shadow-4dp hover:shadow-8dp text-n-950 rounded-lg text-[13px] font-semibold transition-shadow">+ Asignar proyecto</button>
-                    <button className="h-9 px-4 bg-white border border-n-200 shadow-4dp hover:shadow-8dp text-n-950 rounded-lg text-[13px] font-semibold transition-shadow">+ Asignar mentor</button>
-                  </div>
-                </div>
-                <div>
-                  <p className="text-[10px] font-semibold text-n-600 uppercase tracking-widest mb-2">Dejar comentario</p>
+                  <p className="text-[10px] font-semibold text-n-600 uppercase tracking-widest mb-2">Sugerir cambios</p>
                   <textarea
                     className="textarea-humand"
                     placeholder="Compartí tu feedback sobre el plan de carrera de Ana..."
@@ -1492,33 +1628,78 @@ function ManagerTab() {
 
 /* ─── HR ADMIN TAB ──────────────────────────────────────────────── */
 const HR_STATS = [
-  { emoji: '🗺️', value: '12', label: 'Rutas de carrera definidas' },
-  { emoji: '✅', value: '38', label: 'Empleados con plan activo' },
-  { emoji: '🔄', value: '7',  label: 'Planes en revisión' },
-  { emoji: '🏆', value: '4',  label: 'Listos para promoción' },
+  { icon: Map,         value: '12', label: 'Rutas de carrera definidas', color: 'text-h-500'  },
+  { icon: CheckCircle, value: '38', label: 'Empleados con plan activo',  color: 'text-g-600'  },
+  { icon: RotateCw,    value: '7',  label: 'Planes en revisión',         color: 'text-y-600'  },
+  { icon: Award,       value: '4',  label: 'Listos para promoción',      color: 'text-p-600'  },
 ]
 
 const CAREER_PATHS = [
   {
     section: 'DESIGN',
+    dept: 'Diseño',
+    deptColor: '#496be3',
+    deptBg: 'bg-h-50',
     items: [
-      { id: 'sd', label: 'Senior Designer', level: 'Nivel 3', count: 8,  dot: '#496be3' },
-      { id: 'pd', label: 'Product Designer', level: 'Nivel 2', count: 14, dot: '#9db8f3' },
-      { id: 'jd', label: 'Junior Designer',  level: 'Nivel 1', count: 6,  dot: '#c5d4f8' },
-      { id: 'dl', label: 'Design Lead',      level: 'Nivel 4', count: 3,  dot: '#29317f' },
+      { id: 'jd', label: 'Junior Designer',    level: 'Nivel 1', count: 6,  dot: '#c5d4f8', desc: 'Aprendizaje y ejecución de tareas de diseño con supervisión.' },
+      { id: 'pd', label: 'Product Designer',   level: 'Nivel 2', count: 14, dot: '#9db8f3', desc: 'Diseño de flujos y componentes con autonomía creciente.' },
+      { id: 'sd', label: 'Senior Designer',    level: 'Nivel 3', count: 8,  dot: '#496be3', desc: 'Referente técnico de diseño y mentor del equipo.' },
+      { id: 'dl', label: 'Design Lead',        level: 'Nivel 4', count: 3,  dot: '#29317f', desc: 'Liderazgo del equipo de diseño y visión estratégica.' },
     ],
   },
   {
     section: 'ENGINEERING',
+    dept: 'Ingeniería',
+    deptColor: '#35a48e',
+    deptBg: 'bg-t-50',
     items: [
-      { id: 'se', label: 'Senior Engineer',  level: 'Nivel 3', count: 12, dot: '#35a48e' },
-      { id: 'le', label: 'Lead Engineer',    level: 'Nivel 4', count: 5,  dot: '#1f5049' },
+      { id: 'je', label: 'Junior Engineer',    level: 'Nivel 1', count: 9,  dot: '#a8ddd5', desc: 'Desarrollo de tareas técnicas bajo supervisión directa.' },
+      { id: 'mie', label: 'Mid Engineer',      level: 'Nivel 2', count: 15, dot: '#6bc4b5', desc: 'Desarrollo autónomo de features de mediana complejidad.' },
+      { id: 'se', label: 'Senior Engineer',    level: 'Nivel 3', count: 12, dot: '#35a48e', desc: 'Referente técnico, define estándares y revisa código.' },
+      { id: 'le', label: 'Lead Engineer',      level: 'Nivel 4', count: 5,  dot: '#1f5049', desc: 'Liderazgo técnico del equipo e impacto cross-funcional.' },
     ],
   },
   {
     section: 'PRODUCT',
+    dept: 'Producto',
+    deptColor: '#886bff',
+    deptBg: 'bg-p-50',
     items: [
-      { id: 'pm', label: 'Product Manager',  level: 'Nivel 3', count: 7,  dot: '#886bff' },
+      { id: 'apm', label: 'Associate PM',      level: 'Nivel 2', count: 4,  dot: '#c5b8ff', desc: 'Soporte en la definición y seguimiento de producto.' },
+      { id: 'pm',  label: 'Product Manager',   level: 'Nivel 3', count: 7,  dot: '#886bff', desc: 'Ownership de producto, roadmap y stakeholders.' },
+      { id: 'spm', label: 'Senior PM',         level: 'Nivel 4', count: 3,  dot: '#5a3fd4', desc: 'Visión estratégica de producto y liderazgo de área.' },
+    ],
+  },
+  {
+    section: 'MARKETING',
+    dept: 'Marketing',
+    deptColor: '#e3498b',
+    deptBg: 'bg-r-50',
+    items: [
+      { id: 'mc',  label: 'Marketing Coordinator', level: 'Nivel 1', count: 5, dot: '#f4a8c9', desc: 'Ejecución de campañas y apoyo en estrategia de marca.' },
+      { id: 'ms',  label: 'Marketing Specialist',  level: 'Nivel 2', count: 8, dot: '#e3498b', desc: 'Gestión de canales, análisis de métricas y campañas.' },
+      { id: 'ml',  label: 'Marketing Lead',         level: 'Nivel 3', count: 3, dot: '#a0205f', desc: 'Estrategia de marketing y liderazgo del equipo.' },
+    ],
+  },
+  {
+    section: 'PEOPLE',
+    dept: 'People',
+    deptColor: '#de920c',
+    deptBg: 'bg-y-50',
+    items: [
+      { id: 'hrbp', label: 'HR Business Partner', level: 'Nivel 3', count: 4, dot: '#de920c', desc: 'Partner estratégico de negocio para el área de personas.' },
+      { id: 'po',   label: 'People Operations',   level: 'Nivel 2', count: 6, dot: '#f5c06a', desc: 'Operaciones de RRHH, onboarding y procesos internos.' },
+    ],
+  },
+  {
+    section: 'SALES',
+    dept: 'Ventas',
+    deptColor: '#d42e2e',
+    deptBg: 'bg-r-50',
+    items: [
+      { id: 'sdr', label: 'SDR',                level: 'Nivel 1', count: 10, dot: '#f4a0a0', desc: 'Prospección y generación de oportunidades de venta.' },
+      { id: 'ae',  label: 'Account Executive',  level: 'Nivel 2', count: 8,  dot: '#d42e2e', desc: 'Cierre de ventas y gestión de cuentas estratégicas.' },
+      { id: 'sm',  label: 'Sales Manager',      level: 'Nivel 3', count: 3,  dot: '#8b1c1c', desc: 'Liderazgo del equipo comercial y estrategia de ventas.' },
     ],
   },
 ]
@@ -1531,12 +1712,22 @@ const PROGRESSION = [
 
 const REQUIRED_SKILLS = ['Visual Design', 'Prototyping', 'UX Research', 'Figma Advanced', 'Stakeholder Mgmt', 'Design Systems']
 
+const DEFAULT_PATH_DATA = {
+  sd: { skills: ['Visual Design','Prototyping','UX Research','Figma Advanced','Stakeholder Mgmt','Design Systems'], minExp: '3+ años', perf: '≥ 80%', approval: 'Manager + HR' },
+  pd: { skills: ['Visual Design','Prototyping','Figma','User Research','Communication'], minExp: '1+ años', perf: '≥ 70%', approval: 'Manager' },
+  jd: { skills: ['Figma Basics','Visual Design','Teamwork'], minExp: '0+ años', perf: '≥ 60%', approval: 'Manager' },
+  dl: { skills: ['Team Leadership','Design Strategy','Mentorship','Design Systems','Stakeholder Mgmt','Roadmap Planning'], minExp: '5+ años', perf: '≥ 85%', approval: 'Manager + HR' },
+  se: { skills: ['React','TypeScript','Node.js','System Design','Code Review','Agile/Scrum'], minExp: '3+ años', perf: '≥ 80%', approval: 'Manager + HR' },
+  le: { skills: ['Technical Leadership','Architecture','Mentorship','React','TypeScript','Roadmap Planning'], minExp: '5+ años', perf: '≥ 85%', approval: 'Manager + HR' },
+  pm: { skills: ['Product Strategy','Roadmapping','Stakeholder Mgmt','Data Analysis','Agile/Scrum','Market Research'], minExp: '3+ años', perf: '≥ 80%', approval: 'Manager + HR' },
+}
+
 
 /* ─── COMPETENCY FRAMEWORK BUILDER ─────────────────────────────── */
 const CAT_OPTIONS = ['Técnico', 'Liderazgo', 'Soft Skills', 'Estrategia', 'Otro']
 const CAT_COLORS  = { 'Técnico': 'bg-h-50 text-h-800', 'Liderazgo': 'bg-p-50 text-p-800', 'Soft Skills': 'bg-t-50 text-t-800', 'Estrategia': 'bg-y-50 text-y-700', 'Otro': 'bg-n-100 text-n-800' }
 
-function CompetencyBuilder() {
+function CompetencyBuilder({ naked = false }) {
   const { competencies, setCompetencies } = useApp()
   const [selected, setSelected]   = useState(competencies[0]?.id ?? null)
   const [editingComp, setEditingComp] = useState(null)   // id being edited, or 'new'
@@ -1589,14 +1780,14 @@ function CompetencyBuilder() {
     <div className="flex gap-5">
       {/* LEFT: list */}
       <div style={{ width: 240 }} className="shrink-0">
-        <div className="bg-white rounded-2xl shadow-4dp overflow-hidden">
-          <div className="px-4 py-3.5 border-b border-n-100 flex items-center justify-between">
+        <div className={naked ? '' : 'bg-white rounded-2xl shadow-4dp overflow-hidden'}>
+          <div className={`flex items-center justify-between ${naked ? 'mb-2' : 'px-4 py-3.5 border-b border-n-100'}`}>
             <span className="text-[13px] font-semibold text-n-950">Competencias</span>
             <button onClick={startNewComp} className="h-7 px-2.5 bg-h-500 hover:bg-h-600 text-white rounded-lg text-[11px] font-semibold transition-colors flex items-center gap-1">
               <Plus size={11} /> Nueva
             </button>
           </div>
-          <div className="p-2 flex flex-col gap-0.5">
+          <div className={`flex flex-col gap-0.5 ${naked ? '' : 'p-2'}`}>
             {competencies.map(c => (
               <div key={c.id} onClick={() => setSelected(c.id)}
                 className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-lg cursor-pointer transition-colors group ${selected === c.id ? 'bg-h-50' : 'hover:bg-n-50'}`}>
@@ -1784,13 +1975,13 @@ function computeRiskAlerts() {
     const sinPlanPct = sinPlan / t.members.length
     if (t.engagement < ENG_THRESHOLD)
       alerts.push({ id: `eng-${t.team}`, team: t.team, manager: t.manager, severity: t.engagement < 60 ? 'alto' : 'medio',
-        type: 'Engagement bajo', message: `Engagement del equipo en ${t.engagement}% (umbral: ${ENG_THRESHOLD}%)`, icon: '📉' })
+        type: 'Engagement bajo', message: `Engagement del equipo en ${t.engagement}% (umbral: ${ENG_THRESHOLD}%)`, Icon: TrendingDown })
     if (sinPlanPct > PLAN_THRESHOLD)
       alerts.push({ id: `plan-${t.team}`, team: t.team, manager: t.manager, severity: sinPlanPct > 0.7 ? 'alto' : 'medio',
-        type: 'Baja actividad', message: `${sinPlan} de ${t.members.length} integrantes sin plan activo`, icon: '⚠️' })
+        type: 'Baja actividad', message: `${sinPlan} de ${t.members.length} integrantes sin plan activo`, Icon: AlertTriangle })
     if (t.riesgo === 'alto' && t.engagement >= ENG_THRESHOLD && sinPlanPct <= PLAN_THRESHOLD)
       alerts.push({ id: `riesgo-${t.team}`, team: t.team, manager: t.manager, severity: 'alto',
-        type: 'Equipo en riesgo', message: `Retención proyectada en ${t.retencion}% — requiere atención`, icon: '🔴' })
+        type: 'Equipo en riesgo', message: `Retención proyectada en ${t.retencion}% — requiere atención`, Icon: AlertCircle })
   })
   return alerts
 }
@@ -1820,7 +2011,7 @@ function SaludOrganizacional() {
       {activeAlerts.length > 0 && (
         <div className="bg-white rounded-2xl shadow-4dp overflow-hidden">
           <div className="px-5 py-3.5 border-b border-n-100 flex items-center gap-2">
-            <span className="text-base">🚨</span>
+            <AlertOctagon size={16} className="text-r-600" />
             <p className="text-[13px] font-semibold text-n-950 flex-1">Alertas de riesgo detectadas</p>
             <span className="text-[11px] font-bold bg-r-50 text-r-600 px-2 py-0.5 rounded-full">{activeAlerts.length} activas</span>
           </div>
@@ -1830,7 +2021,7 @@ function SaludOrganizacional() {
               const wasSent = sent[alert.id]
               return (
                 <div key={alert.id} className={`flex items-start gap-4 px-5 py-4 ${st.bar}`}>
-                  <span className="text-xl shrink-0 mt-0.5">{alert.icon}</span>
+                  <alert.Icon size={18} className="shrink-0 mt-0.5 text-current" />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-0.5">
                       <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${st.badge}`}>{alert.severity.toUpperCase()}</span>
@@ -1842,7 +2033,7 @@ function SaludOrganizacional() {
                   <div className="flex items-center gap-2 shrink-0">
                     {wasSent ? (
                       <span className="flex items-center gap-1 text-[11px] font-semibold text-g-700 bg-g-50 px-3 py-1.5 rounded-lg">
-                        ✓ Notificación enviada
+                        <Check size={13} /> Notificación enviada
                       </span>
                     ) : (
                       <button onClick={() => sendNotification(alert)}
@@ -1861,7 +2052,7 @@ function SaludOrganizacional() {
 
       {activeAlerts.length === 0 && (
         <div className="flex items-center gap-3 px-5 py-4 bg-g-50 border border-g-200 rounded-2xl">
-          <span className="text-xl">✅</span>
+          <CheckCircle size={18} className="text-g-600" />
           <p className="text-[13px] font-semibold text-g-800">Sin alertas activas — todos los equipos dentro de los umbrales normales</p>
         </div>
       )}
@@ -1889,8 +2080,8 @@ function SaludOrganizacional() {
           <p className="text-[11px] text-n-600">Hacé click en un equipo para ver sus integrantes y planes de carrera</p>
         </div>
         {/* Table header */}
-        <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_32px] items-center px-6 py-2.5 border-b border-n-100 bg-n-50">
-          {['Equipo','Engagement','Plan activo','Retención proy.','Riesgo',''].map(h => (
+        <div className="grid grid-cols-[2fr_1fr_1fr_1fr_32px] items-center px-6 py-2.5 border-b border-n-100 bg-n-50">
+          {['Equipo','Engagement','Plan activo','Riesgo',''].map(h => (
             <span key={h} className="text-[10px] font-semibold text-n-600 uppercase tracking-widest">{h}</span>
           ))}
         </div>
@@ -1904,7 +2095,7 @@ function SaludOrganizacional() {
                 {/* Team row */}
                 <button
                   onClick={() => toggle(t.team)}
-                  className={`w-full grid grid-cols-[2fr_1fr_1fr_1fr_1fr_32px] items-center px-6 py-3.5 text-left transition-colors ${open ? 'bg-h-50' : 'hover:bg-n-50'}`}
+                  className={`w-full grid grid-cols-[2fr_1fr_1fr_1fr_32px] items-center px-6 py-3.5 text-left transition-colors ${open ? 'bg-h-50' : 'hover:bg-n-50'}`}
                 >
                   <div className="flex items-center gap-2">
                     {open ? <ChevronDown size={14} className="text-h-500 shrink-0" /> : <ChevronRight size={14} className="text-n-400 shrink-0" />}
@@ -1923,7 +2114,6 @@ function SaludOrganizacional() {
                     </div>
                     <span className="text-[12px] text-n-600">{withPlan}/{t.members.length}</span>
                   </div>
-                  <span className="text-[12px] text-n-600">{t.retencion}%</span>
                   <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full capitalize w-fit ${RIESGO_BADGE[t.riesgo]}`}>{t.riesgo}</span>
                   <span />
                 </button>
@@ -1977,25 +2167,6 @@ function SaludOrganizacional() {
         </div>
       </div>
 
-      {/* Coverage bars */}
-      <div className="bg-white rounded-2xl shadow-4dp p-5">
-        <p className="text-[13px] font-semibold text-n-950 mb-4">Cobertura de planes por equipo</p>
-        <div className="flex flex-col gap-3">
-          {TEAM_HEALTH.map(t => {
-            const withPlan = t.members.filter(m => m.plan.active).length
-            const pct = Math.round((withPlan / t.members.length) * 100)
-            return (
-              <div key={t.team} className="flex items-center gap-3">
-                <span className="text-[12px] text-n-800 w-44 truncate shrink-0">{t.team}</span>
-                <div className="flex-1 h-2 bg-n-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-h-500 rounded-full bar-fill" style={{ width: `${pct}%` }} />
-                </div>
-                <span className="text-[12px] font-semibold text-n-950 w-16 text-right shrink-0">{withPlan}/{t.members.length}</span>
-              </div>
-            )
-          })}
-        </div>
-      </div>
     </div>
   )
 }
@@ -2089,10 +2260,11 @@ function HeadcountPlanning() {
 
 /* ─── CONFIGURACIÓN DE VISIBILIDAD ──────────────────────────────── */
 const VIS_MATRIX_DEFAULT = {
-  L2: { L1: true,  L2: false, L3: false, L4: false },
-  L3: { L1: true,  L2: true,  L3: false, L4: false },
-  L4: { L1: true,  L2: true,  L3: true,  L4: false },
-  HR: { L1: true,  L2: true,  L3: true,  L4: true  },
+  L2:      { L1: true,  L2: false, L3: false, L4: false },
+  L3:      { L1: true,  L2: true,  L3: false, L4: false },
+  L4:      { L1: true,  L2: true,  L3: true,  L4: false },
+  Manager: { L1: true,  L2: true,  L3: true,  L4: true  },
+  HR:      { L1: true,  L2: true,  L3: true,  L4: true  },
 }
 const VIS_FIELDS_DEFAULT = {
   plan:     { label: 'Plan de carrera completo',   on: true  },
@@ -2114,14 +2286,14 @@ function ConfigVisibilidad() {
   const [fields, setFields] = useState(VIS_FIELDS_DEFAULT)
   const [saved, setSaved]   = useState(false)
   const LEVELS  = ['L1','L2','L3','L4']
-  const VIEWERS = ['L2','L3','L4','HR']
-  const VIEWER_LABELS = { L2:'Mid (L2)', L3:'Senior (L3)', L4:'Lead (L4)', HR:'HR Admin' }
+  const VIEWERS = ['L2','L3','L4','Manager','HR']
+  const VIEWER_LABELS = { L2:'Mid (L2)', L3:'Senior (L3)', L4:'Lead (L4)', Manager:'Manager', HR:'HR Admin' }
   const toggle = (viewer, target) => setMatrix(m => ({ ...m, [viewer]: { ...m[viewer], [target]: !m[viewer][target] } }))
   const save   = () => { setSaved(true); setTimeout(() => setSaved(false), 2000) }
   return (
     <div className="flex flex-col gap-5">
       <div className="bg-y-50 border border-y-200 rounded-2xl p-4 flex items-start gap-3">
-        <span className="text-xl shrink-0">⚠️</span>
+        <AlertTriangle size={18} className="text-y-600 shrink-0" />
         <p className="text-[12px] text-y-800">Estas reglas definen qué información puede ver cada nivel sobre los planes del nivel inferior. Los cambios tienen impacto en toda la organización.</p>
       </div>
       <div className="bg-white rounded-2xl shadow-4dp overflow-hidden">
@@ -2172,7 +2344,7 @@ function ConfigVisibilidad() {
       </div>
       <div className="flex justify-end">
         <button onClick={save} className={`h-9 px-6 rounded-lg text-[13px] font-semibold transition-all shadow-4dp ${saved ? 'bg-g-500 text-white' : 'bg-h-500 hover:bg-h-600 text-white'}`}>
-          {saved ? '✓ Guardado' : 'Guardar configuración'}
+          {saved ? <span className="flex items-center gap-1"><Check size={14} /> Guardado</span> : 'Guardar configuración'}
         </button>
       </div>
     </div>
@@ -2191,17 +2363,26 @@ const COMP_EVOLUTION = [
   { area: 'Desarrollo Técnico', before: 55, after: 78 },
   { area: 'Soft Skills',        before: 48, after: 65 },
 ]
+const NPS_BY_TEAM = [
+  { team: 'Product Design',       nps: 71, responses: 9  },
+  { team: 'Frontend Engineering', nps: 58, responses: 12 },
+  { team: 'Backend Engineering',  nps: 42, responses: 10 },
+  { team: 'Data & Analytics',     nps: 65, responses: 8  },
+  { team: 'People & Culture',     nps: 80, responses: 5  },
+  { team: 'Growth Marketing',     nps: 38, responses: 4  },
+]
+
 function MetricasImpacto() {
   const NPS = 62
   const npsColor = NPS >= 50 ? 'text-g-700' : NPS >= 30 ? 'text-y-600' : 'text-r-600'
+  const [showNPSDetail, setShowNPSDetail] = useState(false)
   return (
     <div className="flex flex-col gap-5">
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-3 gap-4">
         {[
           { label: '% con plan activo',    value: '72%',  sub: '+14% vs inicio año',     color: 'text-h-600' },
           { label: 'NPS del módulo',        value: NPS,    sub: 'Basado en 48 respuestas', color: npsColor    },
           { label: 'Retención (con plan)',  value: '91%',  sub: 'vs 74% sin plan',         color: 'text-g-700' },
-          { label: 'Tiempo prom. a promo',  value: '9.2m', sub: '-2.1m vs año anterior',   color: 'text-p-700' },
         ].map(s => (
           <div key={s.label} className="bg-white rounded-2xl shadow-4dp p-4">
             <p className={`text-3xl font-bold ${s.color}`}>{s.value}</p>
@@ -2248,37 +2429,83 @@ function MetricasImpacto() {
               </div>
             ))}
           </div>
+
+          {/* Team detail dropdown */}
+          <div className="mt-3 border-t border-n-100 pt-3">
+            <button
+              onClick={() => setShowNPSDetail(o => !o)}
+              className="flex items-center gap-1.5 text-[12px] font-semibold text-h-600 hover:text-h-700 transition-colors"
+            >
+              {showNPSDetail ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
+              Ver detalle por equipo
+            </button>
+            {showNPSDetail && (
+              <div className="mt-3 flex flex-col gap-4">
+                {[
+                  { label: 'Promotores',  filter: t => t.nps >= 50, dot: 'bg-g-400', score: 'text-g-700' },
+                  { label: 'Neutrales',   filter: t => t.nps >= 30 && t.nps < 50, dot: 'bg-y-400', score: 'text-y-600' },
+                  { label: 'Detractores', filter: t => t.nps < 30,  dot: 'bg-r-400', score: 'text-r-600' },
+                ].map(group => {
+                  const teams = NPS_BY_TEAM.filter(group.filter)
+                  if (!teams.length) return null
+                  return (
+                    <div key={group.label}>
+                      <div className="flex items-center gap-1.5 mb-2">
+                        <div className={`w-2 h-2 rounded-full ${group.dot}`} />
+                        <span className="text-[10px] font-semibold text-n-500 uppercase tracking-widest">{group.label}</span>
+                      </div>
+                      <div className="flex flex-col gap-1.5 pl-3.5">
+                        {teams.map(t => (
+                          <div key={t.team} className="flex items-center gap-3">
+                            <span className="text-[11px] text-n-700 flex-1">{t.team}</span>
+                            <span className={`text-[11px] font-bold w-8 text-right shrink-0 ${group.score}`}>{t.nps}</span>
+                            <span className="text-[10px] text-n-400 w-14 text-right shrink-0">{t.responses} resp.</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
         </div>
       </div>
       <div className="bg-white rounded-2xl shadow-4dp p-5">
-        <p className="text-[13px] font-semibold text-n-950 mb-1">Evolución de competencias por área</p>
-        <p className="text-[11px] text-n-600 mb-5">Score promedio del equipo — antes vs. después de activar planes</p>
-        <div className="flex flex-col gap-4">
-          {COMP_EVOLUTION.map(c => (
-            <div key={c.area}>
+        <p className="text-[13px] font-semibold text-n-950 mb-1">Planes de carrera más utilizados</p>
+        <p className="text-[11px] text-n-600 mb-4">Rutas con mayor adopción activa en la organización</p>
+        {(() => {
+          const data = [
+            { label: 'Mid → Sr. Designer',  count: 18 },
+            { label: 'Jr. → Mid Engineer',  count: 15 },
+            { label: 'Sr. → Lead Eng.',     count: 11 },
+            { label: 'Assoc. → PM',         count: 9  },
+            { label: 'Mid → Sr. Frontend',  count: 8  },
+            { label: 'Growth → Manager',    count: 5  },
+          ]
+          const maxVal = Math.max(...data.map(d => d.count))
+          return (
+            <div className="flex flex-col gap-2">
               <div className="flex items-center justify-between mb-1">
-                <span className="text-[12px] font-semibold text-n-950">{c.area}</span>
-                <span className="text-[11px] font-bold text-g-700">+{c.after - c.before} pts</span>
+                <span className="text-[10px] text-n-400">Ruta</span>
+                <span className="text-[10px] text-n-400">Nº de colaboradores activos</span>
               </div>
-              <div className="flex flex-col gap-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] text-n-500 w-12 shrink-0">Antes</span>
-                  <div className="flex-1 h-1.5 bg-n-100 rounded-full overflow-hidden">
-                    <div className="h-full bg-n-300 rounded-full bar-fill" style={{ width: `${c.before}%` }} />
+              {data.map((d) => (
+                <div key={d.label} className="flex items-center gap-3">
+                  <span className="text-[12px] text-n-700 w-40 shrink-0">{d.label}</span>
+                  <div className="flex-1 h-6 bg-n-50 rounded-lg overflow-hidden">
+                    <div
+                      className="h-full bg-h-500 rounded-lg bar-fill flex items-center justify-end pr-2"
+                      style={{ width: `${(d.count / maxVal) * 100}%` }}
+                    >
+                      <span className="text-[11px] font-bold text-white">{d.count}</span>
+                    </div>
                   </div>
-                  <span className="text-[10px] text-n-600 w-6 text-right shrink-0">{c.before}</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] text-n-500 w-12 shrink-0">Después</span>
-                  <div className="flex-1 h-1.5 bg-n-100 rounded-full overflow-hidden">
-                    <div className="h-full bg-h-500 rounded-full bar-fill" style={{ width: `${c.after}%` }} />
-                  </div>
-                  <span className="text-[10px] text-h-600 font-semibold w-6 text-right shrink-0">{c.after}</span>
-                </div>
-              </div>
+              ))}
             </div>
-          ))}
-        </div>
+          )
+        })()}
       </div>
       <div className="bg-white rounded-2xl shadow-4dp p-5">
         <p className="text-[13px] font-semibold text-n-950 mb-1">Correlación con retención</p>
@@ -2304,17 +2531,361 @@ function MetricasImpacto() {
 
 
 
+/* ─── NEW CAREER PATH WIZARD ─────────────────────────────────────── */
+const NEW_PATH_STEPS = ['Info básica', 'Skills', 'Requisitos', 'Revisión']
+
+const AREAS = ['Design', 'Engineering', 'Product', 'Marketing', 'Sales', 'Operations', 'People', 'Finance']
+const LEVELS = [
+  { value: 'L1', label: 'L1 — Junior'     },
+  { value: 'L2', label: 'L2 — Mid'        },
+  { value: 'L3', label: 'L3 — Senior'     },
+  { value: 'L4', label: 'L4 — Lead'       },
+  { value: 'L5', label: 'L5 — Principal'  },
+]
+const DOT_COLORS = ['#496be3','#28c040','#886bff','#de920c','#d42e2e','#35a48e','#e3498b','#cbcdd6']
+const SKILL_SUGGESTIONS = [
+  'Figma','Prototyping','Design Systems','UX Research','Stakeholder Mgmt',
+  'React','TypeScript','Node.js','SQL','AWS','Python','Data Analysis',
+  'Liderazgo','Comunicación','Presentaciones','Negociación','Mentoría',
+  'Agile/Scrum','Roadmapping','Product Strategy','Brand Strategy',
+]
+
+function NewCareerPathWizard({ onClose, onSave }) {
+  const [step, setStep]       = useState(0)
+  const [name, setName]       = useState('')
+  const [area, setArea]       = useState('')
+  const [level, setLevel]     = useState('L2')
+  const [desc, setDesc]       = useState('')
+  const [dot, setDot]         = useState('#496be3')
+  const [skills, setSkills]   = useState([])
+  const [skillInput, setSkillInput] = useState('')
+  const [minExp, setMinExp]   = useState('2+ años')
+  const [perf, setPerf]       = useState('≥ 75%')
+  const [approval, setApproval] = useState('Manager + HR')
+
+  const addSkill = (s) => {
+    const trimmed = s.trim()
+    if (trimmed && !skills.includes(trimmed)) setSkills(prev => [...prev, trimmed])
+    setSkillInput('')
+  }
+  const removeSkill = (s) => setSkills(prev => prev.filter(x => x !== s))
+
+  const canNext = [
+    name.trim() !== '' && area !== '',   // step 0
+    skills.length > 0,                   // step 1
+    true,                                // step 2
+    true,                                // step 3
+  ]
+
+  const levelLabel = LEVELS.find(l => l.value === level)?.label || level
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="absolute inset-0 bg-n-950/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-white rounded-2xl shadow-8dp w-full max-w-xl mx-4 overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-n-100">
+          <div>
+            <p className="text-[11px] font-semibold text-n-500 uppercase tracking-widest">Nuevo career path</p>
+            <p className="text-[15px] font-bold text-n-950 mt-0.5">{NEW_PATH_STEPS[step]}</p>
+          </div>
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-n-100 transition-colors">
+            <X size={16} className="text-n-600" />
+          </button>
+        </div>
+
+        {/* Step indicator */}
+        <div className="flex gap-1.5 px-6 pt-4">
+          {NEW_PATH_STEPS.map((s, i) => (
+            <div key={s} className="flex-1 flex flex-col gap-1">
+              <div className={`h-1 rounded-full transition-colors ${i <= step ? 'bg-h-500' : 'bg-n-100'}`} />
+              <p className={`text-[10px] font-medium ${i === step ? 'text-h-600' : 'text-n-400'}`}>{s}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Step content */}
+        <div className="px-6 py-5 min-h-[280px] flex flex-col gap-4">
+
+          {/* Step 0 — Info básica */}
+          {step === 0 && (
+            <>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[12px] font-semibold text-n-700">Nombre del career path *</label>
+                <input
+                  className="input-humand"
+                  placeholder="ej. Senior Designer, Engineering Manager…"
+                  value={name}
+                  onChange={e => setName(e.target.value)}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[12px] font-semibold text-n-700">Área *</label>
+                  <select className="input-humand" value={area} onChange={e => setArea(e.target.value)}>
+                    <option value="">Seleccionar…</option>
+                    {AREAS.map(a => <option key={a} value={a}>{a}</option>)}
+                  </select>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[12px] font-semibold text-n-700">Nivel</label>
+                  <select className="input-humand" value={level} onChange={e => setLevel(e.target.value)}>
+                    {LEVELS.map(l => <option key={l.value} value={l.value}>{l.label}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[12px] font-semibold text-n-700">Descripción</label>
+                <textarea
+                  className="input-humand resize-none h-20"
+                  placeholder="Describí brevemente el rol y sus responsabilidades…"
+                  value={desc}
+                  onChange={e => setDesc(e.target.value)}
+                />
+              </div>
+              <div className="flex flex-col gap-2">
+                <label className="text-[12px] font-semibold text-n-700">Color identificador</label>
+                <div className="flex gap-2">
+                  {DOT_COLORS.map(c => (
+                    <button
+                      key={c}
+                      onClick={() => setDot(c)}
+                      className="w-6 h-6 rounded-full transition-transform hover:scale-110"
+                      style={{ backgroundColor: c, boxShadow: dot === c ? `0 0 0 2px white, 0 0 0 4px ${c}` : undefined }}
+                    />
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Step 1 — Skills */}
+          {step === 1 && (
+            <>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[12px] font-semibold text-n-700">Skills requeridas *</label>
+                <div className="flex gap-2">
+                  <input
+                    className="input-humand flex-1"
+                    placeholder="Escribí una skill y presioná Enter…"
+                    value={skillInput}
+                    onChange={e => setSkillInput(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addSkill(skillInput) } }}
+                  />
+                  <button
+                    onClick={() => addSkill(skillInput)}
+                    className="h-9 px-3 bg-h-500 hover:bg-h-600 text-white rounded-lg text-[13px] font-semibold transition-colors shrink-0"
+                  >
+                    <Plus size={14} />
+                  </button>
+                </div>
+              </div>
+              {skills.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {skills.map(s => (
+                    <div key={s} className="flex items-center gap-1 bg-h-50 text-h-800 text-[12px] font-medium px-2.5 py-1 rounded-lg">
+                      {s}
+                      <button onClick={() => removeSkill(s)} className="text-h-400 hover:text-r-600 ml-0.5 leading-none"><X size={10} /></button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div>
+                <p className="text-[11px] font-semibold text-n-500 mb-2">Sugerencias</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {SKILL_SUGGESTIONS.filter(s => !skills.includes(s)).slice(0, 12).map(s => (
+                    <button
+                      key={s}
+                      onClick={() => addSkill(s)}
+                      className="text-[11px] text-n-700 bg-n-100 hover:bg-h-100 hover:text-h-800 px-2 py-1 rounded-md transition-colors"
+                    >
+                      + {s}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Step 2 — Requisitos */}
+          {step === 2 && (
+            <>
+              <p className="text-[12px] text-n-600">Definí los requisitos mínimos para acceder a este career path.</p>
+              <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[12px] font-semibold text-n-700">Experiencia mínima</label>
+                  <input className="input-humand" value={minExp} onChange={e => setMinExp(e.target.value)} placeholder="ej. 2+ años" />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[12px] font-semibold text-n-700">Aprobación requerida</label>
+                  <select className="input-humand" value={approval} onChange={e => setApproval(e.target.value)}>
+                    <option>Manager</option>
+                    <option>Manager + HR</option>
+                    <option>HR solamente</option>
+                    <option>Automática</option>
+                  </select>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Step 3 — Revisión */}
+          {step === 3 && (
+            <div className="flex flex-col gap-4">
+              <div className="bg-n-50 rounded-xl p-4 flex flex-col gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full border-2 flex items-center justify-center font-bold text-[13px]" style={{ borderColor: dot, color: dot }}>
+                    {level}
+                  </div>
+                  <div>
+                    <p className="text-[15px] font-bold text-n-950">{name}</p>
+                    <p className="text-[12px] text-n-600">{area} · {levelLabel}</p>
+                  </div>
+                </div>
+                {desc && <p className="text-[12px] text-n-700">{desc}</p>}
+              </div>
+              <div>
+                <p className="text-[10px] font-semibold text-n-500 uppercase tracking-widest mb-2">Skills requeridas</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {skills.map(s => (
+                    <span key={s} className="text-[12px] font-medium px-2.5 py-1 rounded-lg bg-h-50 text-h-800">{s}</span>
+                  ))}
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                {[['Experiencia', minExp], ['Performance', perf], ['Aprobación', approval]].map(([l, v]) => (
+                  <div key={l} className="bg-white border border-n-100 rounded-xl p-3">
+                    <p className="text-[10px] text-n-500 font-semibold uppercase tracking-widest mb-1">{l}</p>
+                    <p className="text-[13px] font-semibold text-n-950">{v}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-between px-6 py-4 border-t border-n-100">
+          <button
+            onClick={() => step > 0 ? setStep(s => s - 1) : onClose()}
+            className="h-9 px-4 border border-n-200 text-n-700 rounded-lg text-[13px] font-semibold hover:bg-n-50 transition-colors"
+          >
+            {step === 0 ? 'Cancelar' : 'Atrás'}
+          </button>
+          {step < NEW_PATH_STEPS.length - 1 ? (
+            <button
+              disabled={!canNext[step]}
+              onClick={() => setStep(s => s + 1)}
+              className="h-9 px-5 bg-h-500 hover:bg-h-600 text-white rounded-lg text-[13px] font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Siguiente
+            </button>
+          ) : (
+            <button
+              onClick={() => onSave({ name, area, level, desc, dot, skills, minExp, perf, approval })}
+              className="h-9 px-5 bg-h-500 hover:bg-h-600 text-white rounded-lg text-[13px] font-semibold transition-colors"
+            >
+              Crear career path
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function HRAdminTab() {
   const [selectedPath, setSelectedPath] = useState('sd')
-  const [section, setSection] = useState('paths') // 'paths' | 'competencias' | 'niveles'
+  const [section, setSection] = useState('paths')
+  const [hasChanges, setHasChanges] = useState(false)
+  const [search, setSearch] = useState('')
+  const [searchOpen, setSearchOpen] = useState(false)
+  const [showWizard, setShowWizard] = useState(false)
+  const [savedPaths, setSavedPaths] = useState([])
+  const [successPath, setSuccessPath] = useState(null)
+  const [pathData, setPathData] = useState(DEFAULT_PATH_DATA)
+  const [addSkillInput, setAddSkillInput] = useState('')
+  const [showAllRoles, setShowAllRoles] = useState(false)
+
+  const selectPath = (id) => { setSelectedPath(id); setHasChanges(false); setAddSkillInput('') }
+
+  const curData = pathData[selectedPath] || { skills: [], minExp: '', perf: '', approval: '' }
+
+  const updateField = (field, value) => {
+    setPathData(prev => ({ ...prev, [selectedPath]: { ...prev[selectedPath], [field]: value } }))
+    setHasChanges(true)
+  }
+  const removeSkill = (s) => updateField('skills', curData.skills.filter(x => x !== s))
+  const addSkill = (s) => {
+    const t = s.trim()
+    if (t && !curData.skills.includes(t)) updateField('skills', [...curData.skills, t])
+    setAddSkillInput('')
+  }
+
+  const allPathItems = CAREER_PATHS.flatMap(g => g.items.map(i => ({ ...i, section: g.section })))
+  const selectedPathItem = allPathItems.find(i => i.id === selectedPath)
+  const filteredPathItems = CAREER_PATHS.map(group => ({
+    ...group,
+    items: group.items.filter(i =>
+      i.label.toLowerCase().includes(search.toLowerCase()) ||
+      group.section.toLowerCase().includes(search.toLowerCase())
+    )
+  })).filter(g => g.items.length > 0)
 
   const SUB_TABS = [
-    { id: 'paths',       label: '🗺️ Career Paths' },
-    { id: 'salud',       label: '💚 Salud Org.' },
-    { id: 'headcount',    label: '🔍 Headcount' },
-    { id: 'visibilidad',  label: '🔒 Visibilidad' },
-    { id: 'metricas',     label: '📈 Métricas' },
+    { id: 'paths',      label: 'Roles',        icon: Users         },
+    { id: 'salud',      label: 'Salud Org.',   icon: Heart        },
+    { id: 'metricas',   label: 'Métricas',     icon: TrendingUp   },
   ]
+
+  if (showAllRoles) return (
+    <div className="flex flex-col gap-6 animate-slide-in">
+      {/* Back header */}
+      <div className="flex items-center gap-4">
+        <button
+          onClick={() => setShowAllRoles(false)}
+          className="w-9 h-9 flex items-center justify-center rounded-xl border border-n-200 bg-white hover:bg-n-50 transition-colors shrink-0"
+        >
+          <ChevronDown size={16} className="text-n-700 rotate-90" />
+        </button>
+        <div>
+          <p className="text-[15px] font-bold text-n-950">Todos los roles</p>
+          <p className="text-[12px] text-n-600">Roles disponibles en la organización, organizados por departamento</p>
+        </div>
+      </div>
+
+      {/* Roles by department */}
+      {CAREER_PATHS.map(group => (
+        <div key={group.section}>
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: group.deptColor }} />
+            <p className="text-[11px] font-bold text-n-500 uppercase tracking-widest">{group.dept}</p>
+            <div className="flex-1 h-px bg-n-100" />
+            <span className="text-[10px] text-n-400">{group.items.length} roles</span>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            {group.items.map(item => (
+              <button
+                key={item.id}
+                onClick={() => { selectPath(item.id); setShowAllRoles(false) }}
+                className="bg-white rounded-xl shadow-4dp p-4 text-left hover:shadow-8dp transition-shadow flex flex-col gap-2 group"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2.5 h-2.5 rounded-full shrink-0 mt-0.5" style={{ backgroundColor: item.dot }} />
+                    <p className="text-[13px] font-bold text-n-950 group-hover:text-h-600 transition-colors">{item.label}</p>
+                  </div>
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-n-100 text-n-600 shrink-0">{item.level}</span>
+                </div>
+                <p className="text-[11px] text-n-600 leading-relaxed pl-4">{item.desc}</p>
+                <p className="text-[10px] text-n-400 pl-4">{item.count} personas en este rol</p>
+              </button>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
 
   return (
     <div className="flex flex-col gap-5">
@@ -2322,7 +2893,7 @@ function HRAdminTab() {
       <div className="grid grid-cols-4 gap-4">
         {HR_STATS.map(s => (
           <div key={s.label} className="bg-white rounded-2xl shadow-4dp p-4 flex items-center gap-3">
-            <span className="text-2xl">{s.emoji}</span>
+            <s.icon size={22} className={s.color} />
             <div>
               <p className="text-xl font-bold text-n-950">{s.value}</p>
               <p className="text-[11px] text-n-600">{s.label}</p>
@@ -2335,8 +2906,8 @@ function HRAdminTab() {
       <div className="flex items-center gap-1 bg-n-100 p-1 rounded-xl overflow-x-auto scrollbar-thin">
         {SUB_TABS.map(t => (
           <button key={t.id} onClick={() => setSection(t.id)}
-            className={`h-8 px-3 rounded-lg text-[12px] whitespace-nowrap transition-all ${section === t.id ? 'bg-white shadow-4dp text-n-950 font-semibold' : 'text-n-600 hover:text-n-950'}`}>
-            {t.label}
+            className={`h-8 px-3 rounded-lg text-[12px] whitespace-nowrap transition-all flex items-center gap-1.5 ${section === t.id ? 'bg-white shadow-4dp text-h-500 font-semibold' : 'text-n-600 hover:text-n-950'}`}>
+            <t.icon size={13} />{t.label}
           </button>
         ))}
       </div>
@@ -2344,105 +2915,215 @@ function HRAdminTab() {
       {/* ── Career Paths ── */}
       {section === 'paths' && (
         <>
-        <div className="flex gap-5">
-          <div style={{ width: 240 }}>
-            <div className="bg-white rounded-2xl shadow-4dp">
-              <div className="px-5 py-3.5 border-b border-n-100 flex items-center justify-between">
-                <span className="text-[13px] font-semibold text-n-950">Career Paths</span>
-                <button className="h-8 px-3 bg-h-500 hover:bg-h-600 text-white rounded-lg text-[12px] font-semibold transition-colors">+ New</button>
-              </div>
-              <div className="p-3 flex flex-col gap-1">
-                {CAREER_PATHS.map(group => (
-                  <div key={group.section}>
-                    <p className="text-[10px] font-semibold text-n-600 uppercase tracking-widest px-2 py-1.5">{group.section}</p>
-                    {group.items.map(item => (
-                      <button key={item.id} onClick={() => setSelectedPath(item.id)}
-                        className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left transition-colors ${selectedPath === item.id ? 'bg-p-50' : 'hover:bg-n-50'}`}>
-                        <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: item.dot }} />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-[12px] font-semibold text-n-950 truncate">{item.label}</p>
-                          <p className="text-[10px] text-n-600">{item.level}</p>
-                        </div>
-                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-n-100 text-n-600 shrink-0">{item.count}</span>
-                      </button>
-                    ))}
+        {/* Search + Ver todos */}
+        <div className="flex flex-col gap-1.5">
+          <p className="text-[11px] font-semibold text-n-600">Seleccionar rol</p>
+          <div className="flex gap-3 items-center">
+          <div className="relative flex-1">
+            <div
+              className="flex items-center gap-3 h-10 px-3 bg-white border border-n-200 rounded-xl shadow-4dp cursor-pointer"
+              onClick={() => setSearchOpen(o => !o)}
+            >
+              {selectedPathItem && <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: selectedPathItem.dot }} />}
+              <input
+                className="flex-1 text-[13px] text-n-950 bg-transparent outline-none placeholder:text-n-400"
+                placeholder="Buscar career path..."
+                value={searchOpen ? search : (selectedPathItem?.label || '')}
+                onChange={e => { setSearch(e.target.value); setSearchOpen(true) }}
+                onClick={e => { e.stopPropagation(); setSearchOpen(true); setSearch('') }}
+              />
+              <ChevronDown size={14} className="text-n-400" />
+            </div>
+            {searchOpen && (
+              <>
+                <div className="fixed inset-0 z-10" onClick={() => { setSearchOpen(false); setSearch('') }} />
+                <div className="absolute top-11 left-0 right-0 bg-white border border-n-200 rounded-xl shadow-8dp z-20 overflow-hidden max-h-72 overflow-y-auto">
+                  {filteredPathItems.map(group => (
+                    <div key={group.section}>
+                      <p className="text-[10px] font-semibold text-n-500 uppercase tracking-widest px-3 pt-3 pb-1">{group.section}</p>
+                      {group.items.map(item => (
+                        <button
+                          key={item.id}
+                          onClick={() => { selectPath(item.id); setSearchOpen(false); setSearch('') }}
+                          className={`w-full flex items-center gap-2.5 px-3 py-2.5 text-left transition-colors hover:bg-n-50 ${selectedPath === item.id ? 'bg-p-50' : ''}`}
+                        >
+                          <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: item.dot }} />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[13px] font-semibold text-n-950">{item.label}</p>
+                            <p className="text-[11px] text-n-600">{item.level}</p>
+                          </div>
+                          <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-n-100 text-n-600 shrink-0">{item.count}</span>
+                        </button>
+                      ))}
+                    </div>
+                  ))}
+                  {filteredPathItems.length === 0 && (
+                    <p className="text-[12px] text-n-500 text-center py-4">Sin resultados</p>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+          <button
+            onClick={() => setShowAllRoles(true)}
+            className="text-[13px] font-semibold text-h-500 hover:text-h-700 transition-colors shrink-0"
+          >
+            Ver todos
+          </button>
+        </div>
+        </div>
+        {selectedPathItem && (
+        <div className="flex flex-col gap-4">
+
+          {/* Header — title + save button */}
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[14px] font-bold text-n-950 leading-snug">{selectedPathItem.label}</p>
+              <p className="text-[11px] text-n-600 mt-0.5">{selectedPathItem.section} · {selectedPathItem.level} · {selectedPathItem.count} empleados</p>
+            </div>
+            <button
+              disabled={!hasChanges}
+              onClick={() => setHasChanges(false)}
+              className="h-9 px-4 border rounded-lg text-[13px] font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed bg-white border-h-400 text-h-600 hover:bg-h-50"
+            >Guardar cambios</button>
+          </div>
+
+          {/* Three cards */}
+          <div className="flex flex-col gap-3">
+
+            {/* Skills */}
+            <div className="bg-white rounded-2xl shadow-4dp p-5">
+              <p className="text-[10px] font-semibold text-n-600 uppercase tracking-widest mb-3">Skills requeridas</p>
+              <div className="flex flex-wrap gap-2">
+                {curData.skills.map(s => (
+                  <div key={s} className="flex items-center gap-1 bg-h-50 text-h-800 text-[12px] font-medium px-2.5 py-1 rounded-lg">
+                    {s}
+                    <button onClick={() => removeSkill(s)} className="text-h-400 hover:text-r-600 ml-1 leading-none"><X size={10} /></button>
                   </div>
                 ))}
+                <input
+                  className="h-7 px-2 text-[12px] border border-n-200 rounded-lg outline-none focus:border-h-400 w-28 placeholder:text-n-400"
+                  placeholder="+ Agregar..."
+                  value={addSkillInput}
+                  onChange={e => setAddSkillInput(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addSkill(addSkillInput) } }}
+                />
               </div>
             </div>
-          </div>
-          <div className="flex-1 flex flex-col gap-4 min-w-0">
-            <div className="bg-white rounded-2xl shadow-4dp">
-              <div className="px-6 py-4 border-b border-n-100 flex items-center justify-between">
-                <div>
-                  <p className="text-[13px] font-semibold text-n-950">Senior Designer</p>
-                  <p className="text-[11px] text-n-600">Design · Level 3 · 8 employees</p>
+
+            {/* Requisitos */}
+            <div className="bg-white rounded-2xl shadow-4dp p-5">
+              <p className="text-[10px] font-semibold text-n-600 uppercase tracking-widest mb-3">Requisitos del rol</p>
+              <div className="flex gap-3">
+                <div className="flex-1">
+                  <p className="text-[11px] text-n-600 mb-1">Experiencia mínima</p>
+                  <input className="input-humand w-full" value={curData.minExp} onChange={e => updateField('minExp', e.target.value)} />
                 </div>
-                <div className="flex gap-2">
-                  <button className="h-9 px-4 bg-white border border-n-200 shadow-4dp hover:shadow-8dp text-n-950 rounded-lg text-[13px] font-semibold transition-shadow">Edit path</button>
-                  <button className="h-9 px-4 bg-h-500 hover:bg-h-600 text-white rounded-lg text-[13px] font-semibold transition-colors">Save changes</button>
-                </div>
-              </div>
-              <div className="p-5 flex flex-col gap-5">
-                <div>
-                  <p className="text-[10px] font-semibold text-n-600 uppercase tracking-widest mb-3">Required Skills &amp; Competencies</p>
-                  <div className="flex flex-wrap gap-2">
-                    {['Visual Design','Prototyping','UX Research','Figma Advanced','Stakeholder Mgmt','Design Systems'].map(s => (
-                      <div key={s} className="flex items-center gap-1 bg-h-50 text-h-800 text-[12px] font-medium px-2.5 py-1 rounded-lg">
-                        {s}<button className="text-h-400 hover:text-r-600 ml-1 leading-none">×</button>
-                      </div>
-                    ))}
-                    <button className="flex items-center gap-1 bg-n-100 text-n-600 text-[12px] font-medium px-2.5 py-1 rounded-lg hover:bg-n-200 transition-colors">+ Add skill</button>
-                  </div>
-                </div>
-                <div>
-                  <p className="text-[10px] font-semibold text-n-600 uppercase tracking-widest mb-3">Role Requirements</p>
-                  <div className="grid grid-cols-3 gap-3">
-                    {[['Min. experience','3+ years'],['Perf. score threshold','≥ 80%'],['Approval required','Manager + HR']].map(([label, val]) => (
-                      <div key={label}>
-                        <p className="text-[11px] text-n-600 mb-1">{label}</p>
-                        <input className="input-humand" defaultValue={val} />
-                      </div>
-                    ))}
-                  </div>
+                <div className="flex-1">
+                  <p className="text-[11px] text-n-600 mb-1">Aprobación requerida</p>
+                  <select className="input-humand w-full" value={curData.approval} onChange={e => updateField('approval', e.target.value)}>
+                    <option>Manager</option>
+                    <option>Manager + HR</option>
+                    <option>HR solamente</option>
+                    <option>Automática</option>
+                  </select>
                 </div>
               </div>
             </div>
+
+            {/* Competencias */}
+            <div className="bg-white rounded-2xl shadow-4dp p-5">
+              <CompetencyBuilder naked />
+            </div>
+
           </div>
         </div>
+        )}
 
-        <CompetencyBuilder />
+        {/* Newly created paths */}
+        {savedPaths.length > 0 && (
+          <div className="flex flex-col gap-3 mt-2">
+            <p className="text-[10px] font-semibold text-n-500 uppercase tracking-widest">Creados recientemente</p>
+            {savedPaths.map(p => (
+              <div key={p.id} className="bg-white rounded-2xl shadow-4dp px-5 py-4 flex items-center gap-4">
+                <div className="w-10 h-10 rounded-full border-2 flex items-center justify-center font-bold text-[13px] shrink-0" style={{ borderColor: p.dot, color: p.dot }}>
+                  {p.level}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[14px] font-bold text-n-950">{p.name}</p>
+                  <p className="text-[12px] text-n-600">{p.area} · {p.level}</p>
+                  {p.skills.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-1.5">
+                      {p.skills.slice(0, 5).map(s => (
+                        <span key={s} className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-h-50 text-h-800">{s}</span>
+                      ))}
+                      {p.skills.length > 5 && <span className="text-[10px] text-n-500">+{p.skills.length - 5}</span>}
+                    </div>
+                  )}
+                </div>
+                <span className="text-[10px] font-semibold px-2 py-1 rounded-full bg-g-100 text-g-800 shrink-0">Activo</span>
+              </div>
+            ))}
+          </div>
+        )}
         </>
       )}
-
-
-
 
 
       {/* ── Salud Organizacional ── */}
       {section === 'salud' && <SaludOrganizacional />}
 
       {/* ── Headcount Planning ── */}
-      {section === 'headcount' && <HeadcountPlanning />}
 
       {/* ── Configuración de Visibilidad ── */}
-      {section === 'visibilidad' && <ConfigVisibilidad />}
 
       {/* ── Métricas de Impacto ── */}
       {section === 'metricas' && <MetricasImpacto />}
+
+      {showWizard && (
+        <NewCareerPathWizard
+          onClose={() => setShowWizard(false)}
+          onSave={(data) => {
+            const newPath = { ...data, id: Date.now() }
+            setSavedPaths(prev => [...prev, newPath])
+            setShowWizard(false)
+            setSuccessPath(newPath)
+            setTimeout(() => setSuccessPath(null), 4000)
+          }}
+        />
+      )}
+
+      {/* Success toast */}
+      {successPath && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-n-950 text-white px-5 py-3.5 rounded-2xl shadow-8dp animate-fade-in">
+          <div className="w-6 h-6 rounded-full bg-g-500 flex items-center justify-center shrink-0">
+            <Check size={13} className="text-white" />
+          </div>
+          <p className="text-[13px] font-semibold">Career path <span className="text-g-400">"{successPath.name}"</span> creado con éxito</p>
+          <button onClick={() => setSuccessPath(null)} className="ml-2 text-n-400 hover:text-white transition-colors">
+            <X size={14} />
+          </button>
+        </div>
+      )}
     </div>
   )
 }
 
 /* ─── MAIN COMPONENT ────────────────────────────────────────────── */
 const ACTOR_TABS = [
-  { id: 'employee', label: 'Empleado', dot: '#496be3' },
+  { id: 'employee', label: 'Colaborador', dot: '#496be3' },
   { id: 'manager',  label: 'Manager',  dot: '#35a48e' },
   { id: 'hradmin',  label: 'HU Admin', dot: '#886bff' },
 ]
 
 export default function CareerPath() {
   const [actor, setActor] = useState('employee')
+  const { setIsHrAdmin } = useApp()
+
+  useEffect(() => {
+    setIsHrAdmin(actor === 'hradmin')
+    return () => setIsHrAdmin(false)
+  }, [actor])
 
   return (
     <div className="p-8 max-w-6xl mx-auto animate-slide-in">
@@ -2450,7 +3131,7 @@ export default function CareerPath() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-xl font-bold text-n-950">Plan de Carrera</h1>
-          <p className="text-[13px] text-n-600 mt-0.5">Planificá y seguí tu desarrollo profesional</p>
+          <p className="text-[13px] text-n-600 mt-0.5">{actor === 'hradmin' ? 'Rutas profesionales en la organización' : actor === 'manager' ? 'Da seguimiento, revisa y aprueba el desarrollo profesional de tu equipo' : 'Planificá y seguí tu desarrollo profesional'}</p>
         </div>
 
         {/* Actor switcher */}

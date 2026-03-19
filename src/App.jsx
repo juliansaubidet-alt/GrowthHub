@@ -165,6 +165,7 @@ export default function App() {
   const [competencies, setCompetencies]       = useState(() => load('cp_competencies', defaultCompetencies))
   const [levelObjectives, setLevelObjectives] = useState(() => load('cp_level_objs',   defaultLevelObjectives))
   const [resolvedAlerts, setResolvedAlerts]   = useState(() => load('cp_resolved_alerts', []))
+  const [isHrAdmin, setIsHrAdmin]             = useState(false)
 
   useEffect(() => { localStorage.setItem('cp_profile',    JSON.stringify(profile)) },    [profile])
   useEffect(() => { localStorage.setItem('cp_skills',     JSON.stringify(skills)) },     [skills])
@@ -189,6 +190,7 @@ export default function App() {
     levelObjectives, setLevelObjectives,
     resolvedAlerts, setResolvedAlerts,
     leaderRole, setLeaderRole,
+    isHrAdmin, setIsHrAdmin,
   }
 
   const views = {
