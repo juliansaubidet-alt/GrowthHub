@@ -1,54 +1,136 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { X, Plus, Trash2, Edit3 } from 'lucide-react'
 import { useApp } from '../../App'
+import { competenciesApi } from '../../api/competencies'
 
 const CAT_OPTIONS = ['Técnico', 'Liderazgo', 'Soft Skills', 'Estrategia', 'Otro']
 const CAT_COLORS  = { 'Técnico': 'bg-h-50 text-h-800', 'Liderazgo': 'bg-p-50 text-p-800', 'Soft Skills': 'bg-t-50 text-t-800', 'Estrategia': 'bg-y-50 text-y-700', 'Otro': 'bg-n-100 text-n-800' }
 
-export default function CompetencyBuilder({ naked = false }) {
+/* Normalize MongoDB _id → id for competencies and nested skills */
+function normalize(comp) {
+  return {
+    ...comp,
+    id: comp._id || comp.id,
+    skills: (comp.skills || []).map(sk => ({
+      ...sk,
+      id: sk._id || sk.id,
+    })),
+  }
+}
+
+async function refetch(setCompetencies) {
+  const data = await competenciesApi.getAll()
+  setCompetencies(data.map(normalize))
+}
+
+// Map department/area to relevant competency categories
+const AREA_COMPETENCY_MAP = {
+  'DESIGN':      ['Técnico', 'Liderazgo', 'Soft Skills'],
+  'ENGINEERING':  ['Técnico', 'Liderazgo', 'Soft Skills'],
+  'PRODUCT':     ['Estrategia', 'Liderazgo', 'Soft Skills'],
+  'MARKETING':   ['Estrategia', 'Liderazgo', 'Soft Skills'],
+  'PEOPLE':      ['Liderazgo', 'Soft Skills', 'Estrategia'],
+  'SALES':       ['Liderazgo', 'Soft Skills', 'Estrategia'],
+}
+
+// Map department to specific competency names for more precise filtering
+const AREA_COMPETENCY_NAMES = {
+  'DESIGN':      ['Diseño Visual', 'Gestión de Stakeholders', 'Colaboración', 'Liderazgo de Equipos'],
+  'ENGINEERING':  ['Desarrollo Frontend', 'Desarrollo Backend', 'Arquitectura de Software', 'Colaboración', 'Liderazgo de Equipos'],
+  'PRODUCT':     ['Gestión de Producto', 'Gestión de Stakeholders', 'Colaboración', 'Liderazgo de Equipos'],
+  'MARKETING':   ['Growth Marketing', 'Gestión de Stakeholders', 'Colaboración', 'Liderazgo de Equipos'],
+  'PEOPLE':      ['Gestión de Talento', 'Colaboración', 'Liderazgo de Equipos'],
+  'SALES':       ['Gestión de Stakeholders', 'Colaboración', 'Liderazgo de Equipos'],
+}
+
+export default function CompetencyBuilder({ naked = false, filterArea }) {
   const { competencies, setCompetencies } = useApp()
-  const [selected, setSelected]   = useState(competencies[0]?.id ?? null)
+  const [selected, setSelected]   = useState(null)
+
+  // Filter competencies by area if provided
+  const filteredCompetencies = filterArea && AREA_COMPETENCY_NAMES[filterArea]
+    ? competencies.filter(c => AREA_COMPETENCY_NAMES[filterArea].includes(c.name))
+    : competencies
+
+  // Auto-select first competency when data loads or filter changes
+  useEffect(() => {
+    if (filteredCompetencies.length > 0) {
+      const currentStillValid = filteredCompetencies.find(c => (c._id || c.id) === selected)
+      if (!currentStillValid) {
+        setSelected(filteredCompetencies[0]._id || filteredCompetencies[0].id)
+      }
+    }
+  }, [filteredCompetencies, filterArea])
   const [editingComp, setEditingComp] = useState(null)
   const [compDraft, setCompDraft] = useState({ name: '', category: 'Técnico', description: '' })
   const [newSkillText, setNewSkillText] = useState('')
   const [editingSkill, setEditingSkill] = useState(null)
   const [skillDraft, setSkillDraft]     = useState({ name: '', description: '' })
 
-  const selComp = competencies.find(c => c.id === selected)
+  const selComp = filteredCompetencies.find(c => (c._id || c.id) === selected)
 
-  const saveComp = () => {
+  const saveComp = async () => {
     if (!compDraft.name.trim()) return
     if (editingComp === 'new') {
-      const next = { ...compDraft, id: Date.now(), skills: [] }
-      setCompetencies(p => [...p, next])
-      setSelected(next.id)
+      try {
+        const created = await competenciesApi.create(compDraft)
+        await refetch(setCompetencies)
+        const normalized = normalize(created)
+        setSelected(normalized.id)
+      } catch (err) {
+        console.error('Error creating competency:', err)
+      }
     } else {
-      setCompetencies(p => p.map(c => c.id === editingComp ? { ...c, ...compDraft } : c))
+      try {
+        await competenciesApi.update(editingComp, compDraft)
+        await refetch(setCompetencies)
+      } catch (err) {
+        console.error('Error updating competency:', err)
+      }
     }
     setEditingComp(null)
   }
-  const deleteComp = (id) => {
-    setCompetencies(p => p.filter(c => c.id !== id))
-    if (selected === id) setSelected(competencies.find(c => c.id !== id)?.id ?? null)
+  const deleteComp = async (id) => {
+    try {
+      await competenciesApi.remove(id)
+      await refetch(setCompetencies)
+    } catch (err) {
+      console.error('Error deleting competency:', err)
+    }
+    if (selected === id) {
+      const next = filteredCompetencies.find(c => (c._id || c.id) !== id)
+      setSelected(next?._id || next?.id || null)
+    }
   }
   const startNewComp = () => { setCompDraft({ name: '', category: 'Técnico', description: '' }); setEditingComp('new') }
   const startEditComp = (c) => { setCompDraft({ name: c.name, category: c.category, description: c.description }); setEditingComp(c.id) }
 
-  const addSkill = (compId) => {
+  const addSkill = async (compId) => {
     if (!newSkillText.trim()) return
-    setCompetencies(p => p.map(c => c.id === compId
-      ? { ...c, skills: [...c.skills, { id: Date.now(), name: newSkillText.trim(), description: '' }] }
-      : c))
+    try {
+      await competenciesApi.addSkill(compId, { name: newSkillText.trim(), description: '' })
+      await refetch(setCompetencies)
+    } catch (err) {
+      console.error('Error adding skill:', err)
+    }
     setNewSkillText('')
   }
-  const deleteSkill = (compId, skillId) => {
-    setCompetencies(p => p.map(c => c.id === compId ? { ...c, skills: c.skills.filter(s => s.id !== skillId) } : c))
+  const deleteSkill = async (compId, skillId) => {
+    try {
+      await competenciesApi.removeSkill(compId, skillId)
+      await refetch(setCompetencies)
+    } catch (err) {
+      console.error('Error deleting skill:', err)
+    }
   }
-  const saveSkill = () => {
+  const saveSkill = async () => {
     if (!skillDraft.name.trim() || !editingSkill) return
-    setCompetencies(p => p.map(c => c.id === editingSkill.compId
-      ? { ...c, skills: c.skills.map(s => s.id === editingSkill.skillId ? { ...s, ...skillDraft } : s) }
-      : c))
+    try {
+      await competenciesApi.updateSkill(editingSkill.compId, editingSkill.skillId, skillDraft)
+      await refetch(setCompetencies)
+    } catch (err) {
+      console.error('Error updating skill:', err)
+    }
     setEditingSkill(null)
   }
 
@@ -64,9 +146,9 @@ export default function CompetencyBuilder({ naked = false }) {
             </button>
           </div>
           <div className={`flex flex-col gap-0.5 ${naked ? '' : 'p-2'}`}>
-            {competencies.map(c => (
-              <div key={c.id} onClick={() => setSelected(c.id)}
-                className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-lg cursor-pointer transition-colors group ${selected === c.id ? 'bg-h-50' : 'hover:bg-n-50'}`}>
+            {filteredCompetencies.map(c => (
+              <div key={c._id || c.id} onClick={() => setSelected(c._id || c.id)}
+                className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-lg cursor-pointer transition-colors group ${selected === (c._id || c.id) ? 'bg-h-50' : 'hover:bg-n-50'}`}>
                 <div className="flex-1 min-w-0">
                   <p className="text-[12px] font-semibold text-n-950 truncate">{c.name}</p>
                   <span className={`text-[10px] font-semibold px-1.5 py-0 rounded-full ${CAT_COLORS[c.category] || 'bg-n-100 text-n-800'}`}>{c.category}</span>
@@ -126,9 +208,11 @@ export default function CompetencyBuilder({ naked = false }) {
               <p className="text-[10px] font-semibold text-n-600 uppercase tracking-widest mb-3">Habilidades ({selComp.skills.length})</p>
               <div className="flex flex-col gap-2 mb-4">
                 {selComp.skills.length === 0 && <p className="text-xs text-n-500 italic">Sin habilidades aún. Agregá la primera abajo.</p>}
-                {selComp.skills.map(sk => (
-                  <div key={sk.id}>
-                    {editingSkill?.skillId === sk.id ? (
+                {selComp.skills.map((sk, skIdx) => {
+                  const skId = sk._id || sk.id || `sk-${skIdx}`
+                  return (
+                  <div key={skId}>
+                    {editingSkill?.skillId === skId ? (
                       <div className="flex gap-2 items-center bg-n-50 p-2 rounded-lg">
                         <input value={skillDraft.name} onChange={e => setSkillDraft(d => ({ ...d, name: e.target.value }))} className="input-humand flex-1" style={{ height: 32 }} />
                         <input value={skillDraft.description} onChange={e => setSkillDraft(d => ({ ...d, description: e.target.value }))} placeholder="Descripción" className="input-humand flex-1" style={{ height: 32 }} />
@@ -143,15 +227,15 @@ export default function CompetencyBuilder({ naked = false }) {
                           {sk.description && <p className="text-[11px] text-n-600">{sk.description}</p>}
                         </div>
                         <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button onClick={() => { setEditingSkill({ compId: selComp.id, skillId: sk.id }); setSkillDraft({ name: sk.name, description: sk.description }) }}
+                          <button onClick={() => { setEditingSkill({ compId: selComp._id || selComp.id, skillId: skId }); setSkillDraft({ name: sk.name, description: sk.description || '' }) }}
                             className="p-1 text-n-500 hover:text-h-600 rounded transition"><Edit3 size={12} /></button>
-                          <button onClick={() => deleteSkill(selComp.id, sk.id)}
+                          <button onClick={() => deleteSkill(selComp._id || selComp.id, skId)}
                             className="p-1 text-n-500 hover:text-r-600 rounded transition"><Trash2 size={12} /></button>
                         </div>
                       </div>
                     )}
                   </div>
-                ))}
+                  )})}
               </div>
               <div className="flex gap-2">
                 <input value={newSkillText} onChange={e => setNewSkillText(e.target.value)}

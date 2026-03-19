@@ -1,10 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Check, TrendingUp, ArrowLeftRight } from 'lucide-react'
 import { CourseIcon } from './shared'
-import {
-  ROUTES_BY_TYPE, SKILLS_BY_ROUTE, COURSES_BY_ROUTE,
-  DEFAULT_COURSES, MANAGERS, TERM_CONFIG, PRIORITY_CONFIG,
-} from './constants'
+import { TERM_CONFIG, PRIORITY_CONFIG } from './constants'
+import { careerPathsApi } from '../../api/careerPaths'
+import { coursesApi } from '../../api/courses'
+import { usersApi } from '../../api/users'
 
 const WIZARD_STEPS = ['Ruta profesional', 'Habilidades', 'Objetivos', 'Aprendizaje', 'Revisión']
 
@@ -14,86 +14,104 @@ const SOFT_SKILLS = [
   'Proactividad', 'Negociación', 'Presentaciones', 'Mentoría',
 ]
 
-const OBJECTIVES_BY_ROUTE = {
-  'senior-designer': [
-    { id: 'o1', text: 'Liderar al menos 1 proyecto de diseño de principio a fin', term: 'short' },
-    { id: 'o2', text: 'Obtener una certificación en Design Systems o UX Research', term: 'medium' },
-    { id: 'o3', text: 'Alcanzar el nivel Senior con aprobación del manager y HR',  term: 'long'  },
-  ],
-  'design-lead': [
-    { id: 'o1', text: 'Dar mentoría formal a al menos 1 diseñador junior',         term: 'short'  },
-    { id: 'o2', text: 'Co-liderar un proyecto estratégico cross-funcional',         term: 'medium' },
-    { id: 'o3', text: 'Asumir responsabilidades de liderazgo de equipo',            term: 'long'   },
-  ],
-  'ux-researcher': [
-    { id: 'o1', text: 'Conducir al menos 2 sesiones de entrevistas a usuarios',    term: 'short'  },
-    { id: 'o2', text: 'Certificarme en métodos de investigación UX',               term: 'medium' },
-    { id: 'o3', text: 'Liderar el área de research en un producto completo',        term: 'long'   },
-  ],
-  'product-manager': [
-    { id: 'o1', text: 'Completar curso de Product Management y Agile',             term: 'short'  },
-    { id: 'o2', text: 'Participar activamente en la definición de roadmap',        term: 'medium' },
-    { id: 'o3', text: 'Asumir ownership de una feature o producto completo',       term: 'long'   },
-  ],
-  'brand-designer': [
-    { id: 'o1', text: 'Crear al menos 1 pieza de identidad visual desde cero',     term: 'short'  },
-    { id: 'o2', text: 'Desarrollar un brand book o sistema de identidad',          term: 'medium' },
-    { id: 'o3', text: 'Liderar el rediseño visual de un producto o marca',         term: 'long'   },
-  ],
-  'content-strategist': [
-    { id: 'o1', text: 'Definir la guía de voz y tono del producto',                term: 'short'  },
-    { id: 'o2', text: 'Crear una estrategia de contenido para un flujo completo',  term: 'medium' },
-    { id: 'o3', text: 'Ser referente de UX Writing en la organización',            term: 'long'   },
-  ],
-  'ux-director': [
-    { id: 'o1', text: 'Presentar la visión de diseño a stakeholders ejecutivos',   term: 'short'  },
-    { id: 'o2', text: 'Liderar la definición del design system corporativo',       term: 'medium' },
-    { id: 'o3', text: 'Dirigir el área de diseño con ownership total',             term: 'long'   },
-  ],
-  'principal-designer': [
-    { id: 'o1', text: 'Publicar un framework o metodología propia de diseño',      term: 'short'  },
-    { id: 'o2', text: 'Influenciar decisiones de producto a nivel estratégico',    term: 'medium' },
-    { id: 'o3', text: 'Ser reconocido como referente de diseño en la industria',   term: 'long'   },
-  ],
-}
-
-const DEFAULT_OBJECTIVES = [
-  { id: 'o1', text: 'Completar al menos 1 curso relacionado con el nuevo rol',    term: 'short'  },
-  { id: 'o2', text: 'Participar en proyectos que desarrollen las skills requeridas', term: 'medium' },
-  { id: 'o3', text: 'Alcanzar el rol objetivo con el apoyo del manager',           term: 'long'   },
-]
-
-export default function CareerPlanWizard({ onComplete, onCancel }) {
+export default function CareerPlanWizard({ onComplete, onCancel, initialData }) {
+  const isEdit = !!initialData
   const [step, setStep] = useState(1)
-  const [form, setForm] = useState({
-    growthType:      'vertical',
-    route:           '',
-    duration:        '',
-    manager:         '',
-    description:     '',
-    skills:          [],
-    customSkillInput:'',
-    softSkills:      [],
-    softSkillInput:  '',
-    objectives:      [],
-    objInput:        '',
-    objTerm:         'short',
-    editingObjId:    null,
-    selectedCourses: [],
+  const [form, setForm] = useState(() => {
+    if (initialData) {
+      return {
+        growthType:      initialData.growthType || 'vertical',
+        route:           initialData.route || '',
+        duration:        initialData.duration || '',
+        manager:         initialData.managerId?._id || initialData.managerId || '',
+        description:     initialData.description || '',
+        skills:          initialData.skills || [],
+        customSkillInput:'',
+        softSkills:      initialData.softSkills || [],
+        softSkillInput:  '',
+        objectives:      (initialData.objectives || []).map(o => ({ id: o._id || o.id || (o.text + Date.now()), text: o.text, term: o.term })),
+        objInput:        '',
+        objTerm:         'short',
+        editingObjId:    null,
+        selectedCourses: (initialData.selectedCourses || []).map(sc => sc.courseId?._id || sc.courseId || sc),
+      }
+    }
+    return {
+      growthType:      'vertical',
+      route:           '',
+      duration:        '',
+      manager:         '',
+      description:     '',
+      skills:          [],
+      customSkillInput:'',
+      softSkills:      [],
+      softSkillInput:  '',
+      objectives:      [],
+      objInput:        '',
+      objTerm:         'short',
+      editingObjId:    null,
+      selectedCourses: [],
+    }
   })
+
+  const [routes, setRoutes] = useState([])
+  const [managers, setManagers] = useState([])
+  const [predefinedSkills, setPredefinedSkills] = useState([])
+  const [suggestedCourses, setSuggestedCourses] = useState([])
 
   const set = (key, val) => setForm(f => ({ ...f, [key]: val }))
 
-  const routes           = ROUTES_BY_TYPE[form.growthType] || []
-  const selectedRoute    = routes.find(r => r.value === form.route)
-  const predefinedSkills = form.route ? (SKILLS_BY_ROUTE[form.route] || []) : []
-  const suggestedCourses = [...(COURSES_BY_ROUTE[form.route] || []).map((c, i) => ({ ...c, priority: i === 0 ? 1 : i <= 2 ? 2 : 3 })), ...DEFAULT_COURSES]
-    .sort((a, b) => a.priority - b.priority)
-  const selectedManager  = MANAGERS.find(m => m.value === form.manager)
+  // Fetch managers on mount
+  useEffect(() => {
+    usersApi.getManagers().then(data => {
+      setManagers(data.map(m => ({ value: m._id, label: m.name, role: m.role || m.department })))
+    }).catch(console.error)
+  }, [])
 
-  const handleRouteChange = (val) => {
-    const suggested = val ? [...(OBJECTIVES_BY_ROUTE[val] || DEFAULT_OBJECTIVES)] : []
-    setForm(f => ({ ...f, route: val, objectives: suggested.map(o => ({ ...o, id: o.id + Date.now() })) }))
+  // Fetch routes when growthType changes
+  useEffect(() => {
+    careerPathsApi.getRoutes(form.growthType).then(data => {
+      setRoutes(data.map(r => ({ value: r.value, label: r.label, level: r.level })))
+    }).catch(console.error)
+  }, [form.growthType])
+
+  // Load predefined skills if route is pre-set (edit mode)
+  useEffect(() => {
+    if (form.route) {
+      careerPathsApi.getSkills(form.route).then(skills => setPredefinedSkills(skills || [])).catch(console.error)
+    }
+  }, [])
+
+  // Fetch courses when route changes
+  useEffect(() => {
+    if (!form.route) { setSuggestedCourses([]); return }
+    coursesApi.getByRoute(form.route).then(data => {
+      setSuggestedCourses(data.map((c, i) => ({ ...c, id: c._id, priority: c.priority || (i === 0 ? 1 : i <= 2 ? 2 : 3) })))
+    }).catch(console.error)
+  }, [form.route])
+
+  const selectedRoute    = routes.find(r => r.value === form.route)
+  const selectedManager  = managers.find(m => m.value === form.manager)
+
+  const handleRouteChange = async (val) => {
+    set('route', val)
+    if (!val) {
+      setPredefinedSkills([])
+      set('objectives', [])
+      return
+    }
+    try {
+      const [skills, objectives] = await Promise.all([
+        careerPathsApi.getSkills(val),
+        careerPathsApi.getObjectives(val),
+      ])
+      setPredefinedSkills(skills || [])
+      set('objectives', (objectives || []).map(o => ({ ...o, id: o._id || (o.text + Date.now()) })))
+    } catch (err) {
+      console.error(err)
+      setPredefinedSkills([])
+      set('objectives', [])
+    }
   }
 
   const toggleSkill     = (skill) => set('skills',     form.skills.includes(skill)     ? form.skills.filter(s => s !== skill)     : [...form.skills, skill])
@@ -137,7 +155,7 @@ export default function CareerPlanWizard({ onComplete, onCancel }) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-[15px] font-bold text-n-950">Crear plan de carrera</h2>
+          <h2 className="text-[15px] font-bold text-n-950">{isEdit ? 'Editar plan de carrera' : 'Crear plan de carrera'}</h2>
           <p className="text-[12px] text-n-600 mt-0.5">Paso {step} de {WIZARD_STEPS.length} · {WIZARD_STEPS[step - 1]}</p>
         </div>
         <button onClick={onCancel} className="text-[12px] text-n-500 hover:text-n-800 transition-colors">✕ Cancelar</button>
@@ -226,7 +244,7 @@ export default function CareerPlanWizard({ onComplete, onCancel }) {
                     onChange={e => set('manager', e.target.value)}
                   >
                     <option value="">Seleccionar manager…</option>
-                    {MANAGERS.map(m => (
+                    {managers.map(m => (
                       <option key={m.value} value={m.value}>{m.label} · {m.role}</option>
                     ))}
                   </select>
@@ -255,7 +273,11 @@ export default function CareerPlanWizard({ onComplete, onCancel }) {
           )}
 
           {/* STEP 2: Habilidades */}
-          {step === 2 && (
+          {step === 2 && (() => {
+            // Combine predefined + any existing plan skills (no duplicates)
+            const allHardSkills = [...new Set([...predefinedSkills, ...form.skills])]
+            const allSoftSkills = [...new Set([...SOFT_SKILLS, ...form.softSkills])]
+            return (
             <div className="flex flex-col gap-6">
               <div>
                 <div className="flex items-center justify-between mb-3">
@@ -263,7 +285,7 @@ export default function CareerPlanWizard({ onComplete, onCancel }) {
                   {selectedRoute && <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-h-100 text-h-800">{selectedRoute.label}</span>}
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {predefinedSkills.map(skill => {
+                  {allHardSkills.map(skill => {
                     const sel = form.skills.includes(skill)
                     return (
                       <button key={skill} onClick={() => toggleSkill(skill)}
@@ -285,7 +307,7 @@ export default function CareerPlanWizard({ onComplete, onCancel }) {
               <div>
                 <p className="text-[10px] font-semibold text-n-600 uppercase tracking-widest mb-3">Soft skills</p>
                 <div className="flex flex-wrap gap-2">
-                  {SOFT_SKILLS.map(skill => {
+                  {allSoftSkills.map(skill => {
                     const sel = form.softSkills.includes(skill)
                     return (
                       <button key={skill} onClick={() => toggleSoftSkill(skill)}
@@ -333,7 +355,7 @@ export default function CareerPlanWizard({ onComplete, onCancel }) {
                 </div>
               )}
             </div>
-          )}
+            )})()}
 
           {/* STEP 3: Objetivos */}
           {step === 3 && (
@@ -581,10 +603,10 @@ export default function CareerPlanWizard({ onComplete, onCancel }) {
             </button>
           ) : (
             <button
-              onClick={() => onComplete(form)}
+              onClick={() => onComplete({ ...form, routeLabel: selectedRoute?.label || form.route })}
               className="h-9 px-5 bg-h-500 hover:bg-h-600 text-white rounded-lg text-[13px] font-semibold transition-colors"
             >
-              <span className="flex items-center gap-1.5">Enviar plan <Check size={14} /></span>
+              <span className="flex items-center gap-1.5">{isEdit ? 'Reenviar plan' : 'Enviar plan'} <Check size={14} /></span>
             </button>
           )}
         </div>

@@ -1,81 +1,27 @@
-import { useState } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { X, Plus, Check, ChevronDown, ChevronRight, Map, TrendingUp, CheckCircle, RotateCw, Award, Users, Heart } from 'lucide-react'
 import CompetencyBuilder from './CompetencyBuilder'
 import SaludOrganizacional from './SaludOrganizacional'
 import MetricasImpacto from './MetricasImpacto'
 import NewCareerPathWizard from './NewCareerPathWizard'
+import { careerPathsApi } from '../../api/careerPaths'
+import { hrMetricsApi } from '../../api/hrMetrics'
 
-const HR_STATS = [
-  { icon: Map,         value: '12', label: 'Rutas de carrera definidas', color: 'text-h-500'  },
-  { icon: CheckCircle, value: '38', label: 'Empleados con plan activo',  color: 'text-g-600'  },
-  { icon: RotateCw,    value: '7',  label: 'Planes en revisión',         color: 'text-y-600'  },
-  { icon: Award,       value: '4',  label: 'Listos para promoción',      color: 'text-p-600'  },
-]
-
-const CAREER_PATHS = [
-  {
-    section: 'DESIGN', dept: 'Diseño', deptColor: '#496be3', deptBg: 'bg-h-50',
-    items: [
-      { id: 'jd', label: 'Junior Designer',    level: 'Nivel 1', count: 6,  dot: '#c5d4f8', desc: 'Aprendizaje y ejecución de tareas de diseño con supervisión.' },
-      { id: 'pd', label: 'Product Designer',   level: 'Nivel 2', count: 14, dot: '#9db8f3', desc: 'Diseño de flujos y componentes con autonomía creciente.' },
-      { id: 'sd', label: 'Senior Designer',    level: 'Nivel 3', count: 8,  dot: '#496be3', desc: 'Referente técnico de diseño y mentor del equipo.' },
-      { id: 'dl', label: 'Design Lead',        level: 'Nivel 4', count: 3,  dot: '#29317f', desc: 'Liderazgo del equipo de diseño y visión estratégica.' },
-    ],
-  },
-  {
-    section: 'ENGINEERING', dept: 'Ingeniería', deptColor: '#35a48e', deptBg: 'bg-t-50',
-    items: [
-      { id: 'je', label: 'Junior Engineer',    level: 'Nivel 1', count: 9,  dot: '#a8ddd5', desc: 'Desarrollo de tareas técnicas bajo supervisión directa.' },
-      { id: 'mie', label: 'Mid Engineer',      level: 'Nivel 2', count: 15, dot: '#6bc4b5', desc: 'Desarrollo autónomo de features de mediana complejidad.' },
-      { id: 'se', label: 'Senior Engineer',    level: 'Nivel 3', count: 12, dot: '#35a48e', desc: 'Referente técnico, define estándares y revisa código.' },
-      { id: 'le', label: 'Lead Engineer',      level: 'Nivel 4', count: 5,  dot: '#1f5049', desc: 'Liderazgo técnico del equipo e impacto cross-funcional.' },
-    ],
-  },
-  {
-    section: 'PRODUCT', dept: 'Producto', deptColor: '#886bff', deptBg: 'bg-p-50',
-    items: [
-      { id: 'apm', label: 'Associate PM',      level: 'Nivel 2', count: 4,  dot: '#c5b8ff', desc: 'Soporte en la definición y seguimiento de producto.' },
-      { id: 'pm',  label: 'Product Manager',   level: 'Nivel 3', count: 7,  dot: '#886bff', desc: 'Ownership de producto, roadmap y stakeholders.' },
-      { id: 'spm', label: 'Senior PM',         level: 'Nivel 4', count: 3,  dot: '#5a3fd4', desc: 'Visión estratégica de producto y liderazgo de área.' },
-    ],
-  },
-  {
-    section: 'MARKETING', dept: 'Marketing', deptColor: '#e3498b', deptBg: 'bg-r-50',
-    items: [
-      { id: 'mc',  label: 'Marketing Coordinator', level: 'Nivel 1', count: 5, dot: '#f4a8c9', desc: 'Ejecución de campañas y apoyo en estrategia de marca.' },
-      { id: 'ms',  label: 'Marketing Specialist',  level: 'Nivel 2', count: 8, dot: '#e3498b', desc: 'Gestión de canales, análisis de métricas y campañas.' },
-      { id: 'ml',  label: 'Marketing Lead',         level: 'Nivel 3', count: 3, dot: '#a0205f', desc: 'Estrategia de marketing y liderazgo del equipo.' },
-    ],
-  },
-  {
-    section: 'PEOPLE', dept: 'People', deptColor: '#de920c', deptBg: 'bg-y-50',
-    items: [
-      { id: 'hrbp', label: 'HR Business Partner', level: 'Nivel 3', count: 4, dot: '#de920c', desc: 'Partner estratégico de negocio para el área de personas.' },
-      { id: 'po',   label: 'People Operations',   level: 'Nivel 2', count: 6, dot: '#f5c06a', desc: 'Operaciones de RRHH, onboarding y procesos internos.' },
-    ],
-  },
-  {
-    section: 'SALES', dept: 'Ventas', deptColor: '#d42e2e', deptBg: 'bg-r-50',
-    items: [
-      { id: 'sdr', label: 'SDR',                level: 'Nivel 1', count: 10, dot: '#f4a0a0', desc: 'Prospección y generación de oportunidades de venta.' },
-      { id: 'ae',  label: 'Account Executive',  level: 'Nivel 2', count: 8,  dot: '#d42e2e', desc: 'Cierre de ventas y gestión de cuentas estratégicas.' },
-      { id: 'sm',  label: 'Sales Manager',      level: 'Nivel 3', count: 3,  dot: '#8b1c1c', desc: 'Liderazgo del equipo comercial y estrategia de ventas.' },
-    ],
-  },
-]
-
-const DEFAULT_PATH_DATA = {
-  sd: { skills: ['Visual Design','Prototyping','UX Research','Figma Advanced','Stakeholder Mgmt','Design Systems'], minExp: '3+ años', perf: '≥ 80%', approval: 'Manager + HR' },
-  pd: { skills: ['Visual Design','Prototyping','Figma','User Research','Communication'], minExp: '1+ años', perf: '≥ 70%', approval: 'Manager' },
-  jd: { skills: ['Figma Basics','Visual Design','Teamwork'], minExp: '0+ años', perf: '≥ 60%', approval: 'Manager' },
-  dl: { skills: ['Team Leadership','Design Strategy','Mentorship','Design Systems','Stakeholder Mgmt','Roadmap Planning'], minExp: '5+ años', perf: '≥ 85%', approval: 'Manager + HR' },
-  se: { skills: ['React','TypeScript','Node.js','System Design','Code Review','Agile/Scrum'], minExp: '3+ años', perf: '≥ 80%', approval: 'Manager + HR' },
-  le: { skills: ['Technical Leadership','Architecture','Mentorship','React','TypeScript','Roadmap Planning'], minExp: '5+ años', perf: '≥ 85%', approval: 'Manager + HR' },
-  pm: { skills: ['Product Strategy','Roadmapping','Stakeholder Mgmt','Data Analysis','Agile/Scrum','Market Research'], minExp: '3+ años', perf: '≥ 80%', approval: 'Manager + HR' },
+const DEPT_CONFIG = {
+  'DESIGN': { dept: 'Diseño', deptColor: '#496be3', deptBg: 'bg-h-50' },
+  'ENGINEERING': { dept: 'Ingeniería', deptColor: '#35a48e', deptBg: 'bg-t-50' },
+  'PRODUCT': { dept: 'Producto', deptColor: '#886bff', deptBg: 'bg-p-50' },
+  'MARKETING': { dept: 'Marketing', deptColor: '#e3498b', deptBg: 'bg-r-50' },
+  'PEOPLE': { dept: 'People', deptColor: '#de920c', deptBg: 'bg-y-50' },
+  'SALES': { dept: 'Ventas', deptColor: '#d42e2e', deptBg: 'bg-r-50' },
 }
 
 export default function HRAdminTab() {
-  const [selectedPath, setSelectedPath] = useState('sd')
+  const [careerPaths, setCareerPaths] = useState([])
+  const [stats, setStats] = useState({ totalPaths: 0, activePlans: 0, pendingReview: 0, readyForPromotion: 0 })
+  const [loading, setLoading] = useState(true)
+
+  const [selectedPath, setSelectedPath] = useState(null)
   const [section, setSection] = useState('paths')
   const [hasChanges, setHasChanges] = useState(false)
   const [search, setSearch] = useState('')
@@ -83,9 +29,67 @@ export default function HRAdminTab() {
   const [showWizard, setShowWizard] = useState(false)
   const [savedPaths, setSavedPaths] = useState([])
   const [successPath, setSuccessPath] = useState(null)
-  const [pathData, setPathData] = useState(DEFAULT_PATH_DATA)
+  const [pathData, setPathData] = useState({})
   const [addSkillInput, setAddSkillInput] = useState('')
   const [showAllRoles, setShowAllRoles] = useState(false)
+
+  useEffect(() => {
+    Promise.all([
+      careerPathsApi.getAll(),
+      hrMetricsApi.getStats(),
+    ]).then(([paths, statsData]) => {
+      setCareerPaths(paths)
+      setStats(statsData)
+      setLoading(false)
+    }).catch(err => { console.error(err); setLoading(false) })
+  }, [])
+
+  // Populate pathData from API data
+  useEffect(() => {
+    const data = {}
+    careerPaths.forEach(p => {
+      data[p._id] = {
+        skills: p.requiredSkills || [],
+        minExp: p.minExperience || '',
+        perf: p.performanceThreshold || '',
+        approval: p.approvalRequired || '',
+      }
+    })
+    setPathData(data)
+    // Select the first path if none selected
+    if (!selectedPath && careerPaths.length > 0) {
+      setSelectedPath(careerPaths[0]._id)
+    }
+  }, [careerPaths])
+
+  const HR_STATS_DISPLAY = [
+    { icon: Map,         value: String(stats.totalPaths),        label: 'Rutas de carrera definidas', color: 'text-h-500'  },
+    { icon: CheckCircle, value: String(stats.activePlans),       label: 'Empleados con plan activo',  color: 'text-g-600'  },
+    { icon: RotateCw,    value: String(stats.pendingReview),     label: 'Planes en revisión',         color: 'text-y-600'  },
+    { icon: Award,       value: String(stats.readyForPromotion), label: 'Listos para promoción',      color: 'text-p-600'  },
+  ]
+
+  // Derive grouped paths from flat array
+  const groupedPaths = useMemo(() => {
+    const groups = {}
+    careerPaths.forEach(p => {
+      const dept = p.area?.toUpperCase() || p.department || 'OTHER'
+      if (!groups[dept]) groups[dept] = []
+      groups[dept].push({
+        id: p._id,
+        label: p.name,
+        level: p.level,
+        count: p.headcount || 0,
+        dot: p.dot || '#496be3',
+        desc: p.description || '',
+      })
+    })
+    return Object.entries(groups).map(([section, items]) => ({
+      section,
+      ...(DEPT_CONFIG[section] || { dept: section, deptColor: '#496be3', deptBg: 'bg-n-50' }),
+      items,
+    }))
+  }, [careerPaths])
 
   const selectPath = (id) => { setSelectedPath(id); setHasChanges(false); setAddSkillInput('') }
 
@@ -102,9 +106,22 @@ export default function HRAdminTab() {
     setAddSkillInput('')
   }
 
-  const allPathItems = CAREER_PATHS.flatMap(g => g.items.map(i => ({ ...i, section: g.section })))
+  const handleSave = async () => {
+    try {
+      await careerPathsApi.update(selectedPath, {
+        requiredSkills: curData.skills,
+        minExperience: curData.minExp,
+        approvalRequired: curData.approval,
+      })
+      setHasChanges(false)
+    } catch (err) {
+      console.error('Error saving career path:', err)
+    }
+  }
+
+  const allPathItems = groupedPaths.flatMap(g => g.items.map(i => ({ ...i, section: g.section })))
   const selectedPathItem = allPathItems.find(i => i.id === selectedPath)
-  const filteredPathItems = CAREER_PATHS.map(group => ({
+  const filteredPathItems = groupedPaths.map(group => ({
     ...group,
     items: group.items.filter(i =>
       i.label.toLowerCase().includes(search.toLowerCase()) ||
@@ -117,6 +134,15 @@ export default function HRAdminTab() {
     { id: 'salud',      label: 'Salud Org.',   icon: Heart        },
     { id: 'metricas',   label: 'Métricas',     icon: TrendingUp   },
   ]
+
+  if (loading) return (
+    <div className="flex items-center justify-center py-20">
+      <div className="flex flex-col items-center gap-3">
+        <div className="w-8 h-8 border-2 border-h-400 border-t-transparent rounded-full animate-spin" />
+        <p className="text-[13px] text-n-600">Cargando datos...</p>
+      </div>
+    </div>
+  )
 
   if (showAllRoles) return (
     <div className="flex flex-col gap-6 animate-slide-in">
@@ -133,7 +159,7 @@ export default function HRAdminTab() {
         </div>
       </div>
 
-      {CAREER_PATHS.map(group => (
+      {groupedPaths.map(group => (
         <div key={group.section}>
           <div className="flex items-center gap-2 mb-3">
             <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: group.deptColor }} />
@@ -168,7 +194,7 @@ export default function HRAdminTab() {
   return (
     <div className="flex flex-col gap-5">
       <div className="grid grid-cols-4 gap-4">
-        {HR_STATS.map(s => (
+        {HR_STATS_DISPLAY.map(s => (
           <div key={s.label} className="bg-white rounded-2xl shadow-4dp p-4 flex items-center gap-3">
             <s.icon size={22} className={s.color} />
             <div>
@@ -255,7 +281,7 @@ export default function HRAdminTab() {
             </div>
             <button
               disabled={!hasChanges}
-              onClick={() => setHasChanges(false)}
+              onClick={handleSave}
               className="h-9 px-4 border rounded-lg text-[13px] font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed bg-white border-h-400 text-h-600 hover:bg-h-50"
             >Guardar cambios</button>
           </div>
@@ -300,7 +326,7 @@ export default function HRAdminTab() {
             </div>
 
             <div className="bg-white rounded-2xl shadow-4dp p-5">
-              <CompetencyBuilder naked />
+              <CompetencyBuilder naked filterArea={selectedPathItem?.section} />
             </div>
           </div>
         </div>
@@ -340,12 +366,19 @@ export default function HRAdminTab() {
       {showWizard && (
         <NewCareerPathWizard
           onClose={() => setShowWizard(false)}
-          onSave={(data) => {
-            const newPath = { ...data, id: Date.now() }
-            setSavedPaths(prev => [...prev, newPath])
-            setShowWizard(false)
-            setSuccessPath(newPath)
-            setTimeout(() => setSuccessPath(null), 4000)
+          onSave={async (data) => {
+            try {
+              const created = await careerPathsApi.create(data)
+              setSavedPaths(prev => [...prev, { ...data, id: created._id || Date.now() }])
+              setShowWizard(false)
+              setSuccessPath(data)
+              setTimeout(() => setSuccessPath(null), 4000)
+              // Refetch career paths
+              const paths = await careerPathsApi.getAll()
+              setCareerPaths(paths)
+            } catch (err) {
+              console.error('Error creating career path:', err)
+            }
           }}
         />
       )}
