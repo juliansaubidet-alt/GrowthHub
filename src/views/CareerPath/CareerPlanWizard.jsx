@@ -592,14 +592,16 @@ export default function CareerPlanWizard({ onComplete, onCancel, initialData }) 
                 <div className="bg-n-50 rounded-xl p-4">
                   <p className="text-[10px] font-semibold text-n-600 uppercase tracking-widest mb-3">Cursos ({form.selectedCourses.length})</p>
                   <div className="flex flex-col gap-1.5">
-                    {suggestedCourses.filter(c => form.selectedCourses.includes(c.id)).map(c => {
-                      const pcfg = PRIORITY_CONFIG[c.priority] || PRIORITY_CONFIG[3]
+                    {form.selectedCourses.map(courseName => {
+                      const c = suggestedCourses.find(sc => sc.name === courseName) || { name: courseName }
+                      const pcfg = PRIORITY_CONFIG[c.priority] || PRIORITY_CONFIG[2]
+                      const tCfg = { 'Certificación': 'bg-p-100 text-p-800', 'Workshop': 'bg-y-100 text-y-700', 'Curso': 'bg-t-100 text-t-800' }
                       return (
-                        <div key={c.id} className="flex items-center gap-2">
-                          <span className="text-sm">{c.emoji}</span>
-                          <p className="text-[12px] text-n-800 flex-1">{c.title}</p>
+                        <div key={courseName} className="flex items-center gap-2">
+                          <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0 ${tCfg[c.type] || 'bg-n-100 text-n-600'}`}>{c.type || 'Curso'}</span>
+                          <p className="text-[12px] text-n-800 flex-1">{c.name}</p>
                           <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${pcfg.badge}`}>{pcfg.label}</span>
-                          <span className="text-[11px] text-n-500">{c.duration}</span>
+                          {c.duration && <span className="text-[11px] text-n-500">{c.duration}</span>}
                         </div>
                       )
                     })}
