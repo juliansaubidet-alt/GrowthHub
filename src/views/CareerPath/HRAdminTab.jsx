@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { X, Plus, Check, ChevronDown, ChevronRight, Map, TrendingUp, CheckCircle, RotateCw, Award, Users, Heart } from 'lucide-react'
-import CompetencyBuilder from './CompetencyBuilder'
+import { CourseIcon } from './shared'
 import SaludOrganizacional from './SaludOrganizacional'
 import MetricasImpacto from './MetricasImpacto'
 import NewCareerPathWizard from './NewCareerPathWizard'
@@ -31,6 +31,14 @@ export default function HRAdminTab() {
   const [successPath, setSuccessPath] = useState(null)
   const [pathData, setPathData] = useState({})
   const [addSkillInput, setAddSkillInput] = useState('')
+  const [addSoftSkillInput, setAddSoftSkillInput] = useState('')
+  const [addObjInput, setAddObjInput] = useState('')
+  const [addObjTerm, setAddObjTerm] = useState('short')
+  const [addCourseInput, setAddCourseInput] = useState('')
+  const [addCourseType, setAddCourseType] = useState('Curso')
+  const [addCourseProvider, setAddCourseProvider] = useState('')
+  const [addCourseDuration, setAddCourseDuration] = useState('')
+  const [addCoursePriority, setAddCoursePriority] = useState(2)
   const [showAllRoles, setShowAllRoles] = useState(false)
 
   useEffect(() => {
@@ -50,6 +58,9 @@ export default function HRAdminTab() {
     careerPaths.forEach(p => {
       data[p._id] = {
         skills: p.requiredSkills || [],
+        softSkills: p.softSkills || [],
+        suggestedObjectives: p.suggestedObjectives || [],
+        suggestedCourses: p.suggestedCourses || [],
         minExp: p.minExperience || '',
         perf: p.performanceThreshold || '',
         approval: p.approvalRequired || '',
@@ -93,7 +104,7 @@ export default function HRAdminTab() {
 
   const selectPath = (id) => { setSelectedPath(id); setHasChanges(false); setAddSkillInput('') }
 
-  const curData = pathData[selectedPath] || { skills: [], minExp: '', perf: '', approval: '' }
+  const curData = pathData[selectedPath] || { skills: [], softSkills: [], suggestedObjectives: [], suggestedCourses: [], minExp: '', perf: '', approval: '' }
 
   const updateField = (field, value) => {
     setPathData(prev => ({ ...prev, [selectedPath]: { ...prev[selectedPath], [field]: value } }))
@@ -110,6 +121,9 @@ export default function HRAdminTab() {
     try {
       await careerPathsApi.update(selectedPath, {
         requiredSkills: curData.skills,
+        softSkills: curData.softSkills,
+        suggestedObjectives: curData.suggestedObjectives,
+        suggestedCourses: curData.suggestedCourses,
         minExperience: curData.minExp,
         approvalRequired: curData.approval,
       })
@@ -306,6 +320,59 @@ export default function HRAdminTab() {
               </div>
             </div>
 
+            {/* Soft Skills */}
+            <div className="bg-white rounded-2xl shadow-4dp p-5">
+              <p className="text-[10px] font-semibold text-n-600 uppercase tracking-widest mb-3">Soft skills</p>
+              <div className="flex flex-wrap gap-2">
+                {(curData.softSkills || []).map(s => (
+                  <div key={s} className="flex items-center gap-1 bg-t-50 text-t-800 text-[12px] font-medium px-2.5 py-1 rounded-lg">
+                    {s}
+                    <button onClick={() => { updateField('softSkills', curData.softSkills.filter(x => x !== s)) }} className="text-t-400 hover:text-r-600 ml-1 leading-none"><X size={10} /></button>
+                  </div>
+                ))}
+                <input
+                  className="h-7 px-2 text-[12px] border border-n-200 rounded-lg outline-none focus:border-t-400 w-28 placeholder:text-n-400"
+                  placeholder="+ Agregar..."
+                  value={addSoftSkillInput}
+                  onChange={e => setAddSoftSkillInput(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); const t = addSoftSkillInput.trim(); if (t && !curData.softSkills.includes(t)) { updateField('softSkills', [...curData.softSkills, t]); setAddSoftSkillInput('') } } }}
+                />
+              </div>
+            </div>
+
+            {/* Objetivos sugeridos */}
+            <div className="bg-white rounded-2xl shadow-4dp p-5">
+              <p className="text-[10px] font-semibold text-n-600 uppercase tracking-widest mb-3">Objetivos sugeridos</p>
+              <div className="flex flex-col gap-1.5 mb-3">
+                {(curData.suggestedObjectives || []).map((obj, i) => {
+                  const termCfg = { short: 'bg-g-100 text-g-800', medium: 'bg-y-100 text-y-700', long: 'bg-p-100 text-p-800' }
+                  const termLabel = { short: 'Corto', medium: 'Mediano', long: 'Largo' }
+                  return (
+                    <div key={i} className="flex items-start gap-2 p-2 rounded-lg bg-n-50 group">
+                      <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0 mt-0.5 ${termCfg[obj.term] || 'bg-n-100 text-n-600'}`}>{termLabel[obj.term] || obj.term}</span>
+                      <p className="text-[12px] text-n-950 flex-1">{obj.text}</p>
+                      <button onClick={() => updateField('suggestedObjectives', curData.suggestedObjectives.filter((_, j) => j !== i))} className="opacity-0 group-hover:opacity-100 text-n-400 hover:text-r-600 shrink-0"><X size={12} /></button>
+                    </div>
+                  )
+                })}
+              </div>
+              <div className="flex items-center gap-2">
+                <select className="h-8 px-2 text-[11px] border border-n-200 rounded-lg outline-none focus:border-h-400 bg-white shrink-0" value={addObjTerm} onChange={e => setAddObjTerm(e.target.value)}>
+                  <option value="short">Corto</option>
+                  <option value="medium">Mediano</option>
+                  <option value="long">Largo</option>
+                </select>
+                <input
+                  className="flex-1 h-8 px-2.5 text-[12px] border border-n-200 rounded-lg outline-none focus:border-h-400 placeholder:text-n-400"
+                  placeholder="Nuevo objetivo sugerido..."
+                  value={addObjInput}
+                  onChange={e => setAddObjInput(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); const t = addObjInput.trim(); if (t) { updateField('suggestedObjectives', [...(curData.suggestedObjectives || []), { text: t, term: addObjTerm }]); setAddObjInput('') } } }}
+                />
+                <button onClick={() => { const t = addObjInput.trim(); if (t) { updateField('suggestedObjectives', [...(curData.suggestedObjectives || []), { text: t, term: addObjTerm }]); setAddObjInput('') } }} className="h-8 px-3 bg-h-500 hover:bg-h-600 text-white rounded-lg text-[12px] font-semibold transition-colors shrink-0"><Plus size={13} /></button>
+              </div>
+            </div>
+
             <div className="bg-white rounded-2xl shadow-4dp p-5">
               <p className="text-[10px] font-semibold text-n-600 uppercase tracking-widest mb-3">Requisitos del rol</p>
               <div className="flex gap-3">
@@ -325,8 +392,56 @@ export default function HRAdminTab() {
               </div>
             </div>
 
+            {/* Cursos sugeridos */}
             <div className="bg-white rounded-2xl shadow-4dp p-5">
-              <CompetencyBuilder naked filterArea={selectedPathItem?.section} />
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-[10px] font-semibold text-n-600 uppercase tracking-widest">Cursos sugeridos</p>
+                <span className="text-[11px] text-n-500">{(curData.suggestedCourses || []).length} cursos</span>
+              </div>
+              <div className="flex flex-col gap-2.5 mb-3">
+                {(curData.suggestedCourses || []).map((c, i) => {
+                  const pCfg = { 1: { label: 'Esencial', cls: 'bg-g-100 text-g-700' }, 2: { label: 'Recomendado', cls: 'bg-h-100 text-h-800' }, 3: { label: 'Opcional', cls: 'bg-p-100 text-p-700' } }
+                  const pcfg = pCfg[c.priority] || pCfg[2]
+                  return (
+                    <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-n-50 group">
+                      <div className="w-10 h-10 rounded-xl bg-white shadow-4dp flex items-center justify-center shrink-0"><CourseIcon type={c.type} /></div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[10px] font-semibold text-n-500 uppercase tracking-widest">{c.type || 'Curso'}</p>
+                        <p className="text-[13px] font-semibold text-n-950 mt-0.5">{c.name}</p>
+                        <p className="text-[11px] text-n-600">{c.provider || ''}{c.duration ? ` · ${c.duration}` : ''}</p>
+                      </div>
+                      <select className="h-7 px-1.5 text-[10px] border border-n-200 rounded-lg outline-none bg-white shrink-0" value={c.priority} onChange={e => { const updated = [...curData.suggestedCourses]; updated[i] = { ...c, priority: Number(e.target.value) }; updateField('suggestedCourses', updated) }}>
+                        <option value={1}>Esencial</option>
+                        <option value={2}>Recomendado</option>
+                        <option value={3}>Opcional</option>
+                      </select>
+                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${pcfg.cls}`}>{pcfg.label}</span>
+                      <button onClick={() => updateField('suggestedCourses', curData.suggestedCourses.filter((_, j) => j !== i))} className="opacity-0 group-hover:opacity-100 text-n-400 hover:text-r-600 shrink-0"><X size={13} /></button>
+                    </div>
+                  )
+                })}
+              </div>
+              <div className="bg-n-50 rounded-xl p-3 flex flex-col gap-2">
+                <p className="text-[10px] font-semibold text-n-500 uppercase tracking-widest">Agregar curso</p>
+                <div className="flex items-center gap-2">
+                  <input className="flex-1 h-8 px-2.5 text-[12px] border border-n-200 rounded-lg outline-none focus:border-h-400 placeholder:text-n-400 bg-white" placeholder="Nombre del curso..." value={addCourseInput} onChange={e => setAddCourseInput(e.target.value)} />
+                  <select className="h-8 px-2 text-[11px] border border-n-200 rounded-lg outline-none bg-white shrink-0" value={addCourseType} onChange={e => setAddCourseType(e.target.value)}>
+                    <option value="Curso">Curso</option>
+                    <option value="Certificación">Certificación</option>
+                    <option value="Workshop">Workshop</option>
+                  </select>
+                  <select className="h-8 px-2 text-[11px] border border-n-200 rounded-lg outline-none bg-white shrink-0" value={addCoursePriority} onChange={e => setAddCoursePriority(Number(e.target.value))}>
+                    <option value={1}>Esencial</option>
+                    <option value={2}>Recomendado</option>
+                    <option value={3}>Opcional</option>
+                  </select>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input className="flex-1 h-8 px-2.5 text-[12px] border border-n-200 rounded-lg outline-none focus:border-h-400 placeholder:text-n-400 bg-white" placeholder="Provider..." value={addCourseProvider} onChange={e => setAddCourseProvider(e.target.value)} />
+                  <input className="w-20 h-8 px-2.5 text-[12px] border border-n-200 rounded-lg outline-none focus:border-h-400 placeholder:text-n-400 bg-white" placeholder="Duración" value={addCourseDuration} onChange={e => setAddCourseDuration(e.target.value)} />
+                  <button onClick={() => { const t = addCourseInput.trim(); if (t) { updateField('suggestedCourses', [...(curData.suggestedCourses || []), { name: t, type: addCourseType, provider: addCourseProvider, duration: addCourseDuration, priority: addCoursePriority }]); setAddCourseInput(''); setAddCourseProvider(''); setAddCourseDuration('') } }} className="h-8 px-3 bg-h-500 hover:bg-h-600 text-white rounded-lg text-[12px] font-semibold transition-colors shrink-0"><Plus size={13} /></button>
+                </div>
+              </div>
             </div>
           </div>
         </div>

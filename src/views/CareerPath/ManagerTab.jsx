@@ -5,7 +5,7 @@ import { TERM_CONFIG, PRIORITY_CONFIG } from './constants'
 import { useApp } from '../../App'
 import { usersApi } from '../../api/users'
 import { careerPlansApi } from '../../api/careerPlans'
-import { coursesApi } from '../../api/courses'
+import { careerPathsApi } from '../../api/careerPaths'
 
 function getStatusBadge(plan) {
   if (!plan) return { cls: 'bg-n-100 text-n-600', label: 'Sin plan' }
@@ -49,9 +49,7 @@ export default function ManagerTab() {
     setPlanStatusMap({})
     Promise.all([
       usersApi.getTeam(selectedUser._id),
-      coursesApi.getAll(),
-    ]).then(async ([members, courses]) => {
-      setAllCourses(courses)
+    ]).then(async ([members]) => {
       setTeam(members)
       setSelectedIdx(0)
       setLoading(false)
@@ -71,8 +69,15 @@ export default function ManagerTab() {
     if (!m?._id) { setCurrentPlan(null); return }
     setPlanLoading(true)
     careerPlansApi.getByEmployee(m._id)
-      .then(plan => {
+      .then(async plan => {
         setCurrentPlan(plan || null)
+        // Load suggested courses from career path for this plan's route
+        if (plan?.route) {
+          try {
+            const courses = await careerPathsApi.getSuggestedCourses(plan.route)
+            setAllCourses(courses || [])
+          } catch { setAllCourses([]) }
+        } else { setAllCourses([]) }
         setPlanLoading(false)
         // Update status map
         setPlanStatusMap(prev => ({ ...prev, [m._id]: plan?.status || null }))
@@ -170,17 +175,26 @@ export default function ManagerTab() {
     handleUpdateSkills(plan.skills || [], updated)
   }
 
-  // Build course list from plan.selectedCourses matched with allCourses
+  // Build course list from plan.selectedCourses — courseId is the course name
   const planCourses = (plan?.selectedCourses || []).map(sc => {
-    const course = allCourses.find(c => c._id === sc.courseId) || allCourses.find(c => c._id === sc.courseId?._id)
-    return { ...sc, course }
+    const courseName = sc.courseId || sc
+    const info = allCourses.find(c => c.name === courseName || c._id === courseName) || {}
+    return {
+      id: courseName,
+      name: info.name || info.title || courseName,
+      type: info.type || 'Curso',
+      provider: info.provider || '',
+      duration: info.duration || '',
+      priority: info.priority || sc.priority || 2,
+      status: sc.status || 'pendiente',
+    }
   })
 
   // Available courses for the add dropdown (not already in plan)
-  const planCourseIds = new Set((plan?.selectedCourses || []).map(sc => sc.courseId?._id || sc.courseId))
+  const planCourseNames = new Set(planCourses.map(c => c.name))
   const filteredAvailable = allCourses.filter(c =>
-    !planCourseIds.has(c._id) &&
-    (c.title?.toLowerCase().includes(courseSearch.toLowerCase()) || c.type?.toLowerCase().includes(courseSearch.toLowerCase()))
+    !planCourseNames.has(c.name || c.title) &&
+    ((c.name || c.title || '').toLowerCase().includes(courseSearch.toLowerCase()) || (c.type || '').toLowerCase().includes(courseSearch.toLowerCase()))
   )
 
   // Path nodes
@@ -306,7 +320,7 @@ export default function ManagerTab() {
                   <button
                     onClick={() => setShowSuggest(true)}
                     className="h-8 px-3 text-[12px] font-semibold border border-y-600 text-y-700 rounded-lg hover:bg-y-50 transition-colors"
-                  ><CornerDownLeft size={13} className="inline mr-1" />Editar sugerencia</button>
+                  ><CornerDownLeft size={13} className="inline mr-1" />Agregar feedback</button>
                 </div>
               </div>
             )}
@@ -571,20 +585,18 @@ export default function ManagerTab() {
                     </div>
                   </div>
                 )}
-                {planCourses.map(sc => {
-                  const c = sc.course
-                  if (!c) return null
-                  const pcfg = PRIORITY_CONFIG[sc.priority] || PRIORITY_CONFIG[3]
+                {planCourses.map((c, i) => {
+                  const pcfg = PRIORITY_CONFIG[c.priority] || PRIORITY_CONFIG[3]
                   return (
-                    <div key={c._id} className="flex items-center gap-3 p-3 rounded-xl bg-n-50 group">
+                    <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-n-50 group">
                       <div className="w-10 h-10 rounded-xl bg-white shadow-4dp flex items-center justify-center shrink-0"><CourseIcon type={c.type} /></div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-[10px] font-semibold text-n-500 uppercase tracking-widest">{c.type}</p>
-                        <p className="text-[13px] font-semibold text-n-950 mt-0.5">{c.title}</p>
-                        <p className="text-[11px] text-n-600">{c.provider} · {c.duration}</p>
+                        <p className="text-[10px] font-semibold text-n-500 uppercase tracking-widest">{c.type || 'Curso'}</p>
+                        <p className="text-[13px] font-semibold text-n-950 mt-0.5">{c.name}</p>
+                        <p className="text-[11px] text-n-600">{c.provider}{c.duration ? ` · ${c.duration}` : ''}</p>
                       </div>
                       <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${pcfg.badge}`}>{pcfg.label}</span>
-                      {isEditable && <button onClick={() => handleRemoveCourse(c._id)} className="opacity-0 group-hover:opacity-100 transition-opacity text-n-400 hover:text-r-600 shrink-0"><X size={13} /></button>}
+                      {isEditable && <button onClick={() => handleRemoveCourse(c.id)} className="opacity-0 group-hover:opacity-100 transition-opacity text-n-400 hover:text-r-600 shrink-0"><X size={13} /></button>}
                     </div>
                   )
                 })}
@@ -620,8 +632,8 @@ export default function ManagerTab() {
               </div>
             )}
 
-            {/* Manager actions - only when not approved */}
-            {isEditable && <div className="bg-white rounded-2xl shadow-4dp">
+            {/* Manager feedback */}
+            {plan && <div className="bg-white rounded-2xl shadow-4dp">
               <div className="p-5 flex flex-col gap-5">
                 <div>
                   <p className="text-[10px] font-semibold text-n-600 uppercase tracking-widest mb-2">Agregar feedback</p>
@@ -635,7 +647,7 @@ export default function ManagerTab() {
                     disabled={!feedback.trim()}
                     onClick={async () => {
                       if (!plan || !feedback.trim()) return
-                      await careerPlansApi.requestChanges(plan._id, feedback, selectedUser?.name)
+                      await careerPlansApi.addFeedback(plan._id, feedback, selectedUser?.name)
                       setFeedback('')
                       await refetchPlan()
                     }}

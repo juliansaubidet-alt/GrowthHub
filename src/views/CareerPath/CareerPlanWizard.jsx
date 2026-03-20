@@ -5,6 +5,7 @@ import { TERM_CONFIG, PRIORITY_CONFIG } from './constants'
 import { careerPathsApi } from '../../api/careerPaths'
 import { coursesApi } from '../../api/courses'
 import { usersApi } from '../../api/users'
+import { useApp } from '../../App'
 
 const WIZARD_STEPS = ['Ruta profesional', 'Habilidades', 'Objetivos', 'Aprendizaje', 'Revisión']
 
@@ -15,6 +16,9 @@ const SOFT_SKILLS = [
 ]
 
 export default function CareerPlanWizard({ onComplete, onCancel, initialData }) {
+  const { selectedUser } = useApp()
+  const userDepartment = selectedUser?.department || ''
+  const userLevel = selectedUser?.level || ''
   const isEdit = !!initialData
   const [step, setStep] = useState(1)
   const [form, setForm] = useState(() => {
@@ -57,36 +61,56 @@ export default function CareerPlanWizard({ onComplete, onCancel, initialData }) 
   const [routes, setRoutes] = useState([])
   const [managers, setManagers] = useState([])
   const [predefinedSkills, setPredefinedSkills] = useState([])
+  const [predefinedSoftSkills, setPredefinedSoftSkills] = useState([])
   const [suggestedCourses, setSuggestedCourses] = useState([])
 
   const set = (key, val) => setForm(f => ({ ...f, [key]: val }))
 
-  // Fetch managers on mount
+  // Fetch managers on mount — if user has a managerId, show only that one
   useEffect(() => {
-    usersApi.getManagers().then(data => {
-      setManagers(data.map(m => ({ value: m._id, label: m.name, role: m.role || m.department })))
-    }).catch(console.error)
+    if (selectedUser?.managerId) {
+      // User has assigned manager — only show that one
+      const mgr = selectedUser.managerId
+      // managerId could be populated object or string
+      if (typeof mgr === 'object' && mgr._id) {
+        setManagers([{ value: mgr._id, label: mgr.name, role: mgr.department || '' }])
+        if (!form.manager) set('manager', mgr._id)
+      } else {
+        // It's just an ID string, fetch all and filter
+        usersApi.getManagers().then(data => {
+          const match = data.filter(m => m._id === mgr || m._id === String(mgr))
+          const list = match.length > 0 ? match : data
+          setManagers(list.map(m => ({ value: m._id, label: m.name, role: m.role || m.department })))
+          if (!form.manager && match.length === 1) set('manager', match[0]._id)
+        }).catch(console.error)
+      }
+    } else {
+      usersApi.getManagers().then(data => {
+        setManagers(data.map(m => ({ value: m._id, label: m.name, role: m.role || m.department })))
+      }).catch(console.error)
+    }
   }, [])
 
   // Fetch routes when growthType changes
   useEffect(() => {
-    careerPathsApi.getRoutes(form.growthType).then(data => {
+    careerPathsApi.getRoutes(form.growthType, userDepartment, userLevel).then(data => {
       setRoutes(data.map(r => ({ value: r.value, label: r.label, level: r.level })))
     }).catch(console.error)
-  }, [form.growthType])
+  }, [form.growthType, userDepartment, userLevel])
 
   // Load predefined skills if route is pre-set (edit mode)
   useEffect(() => {
     if (form.route) {
       careerPathsApi.getSkills(form.route).then(skills => setPredefinedSkills(skills || [])).catch(console.error)
+      careerPathsApi.getSoftSkills(form.route).then(ss => setPredefinedSoftSkills(ss || [])).catch(console.error)
     }
   }, [])
 
-  // Fetch courses when route changes
+  // Fetch courses when route changes — from CareerPath (admin-defined)
   useEffect(() => {
     if (!form.route) { setSuggestedCourses([]); return }
-    coursesApi.getByRoute(form.route).then(data => {
-      setSuggestedCourses(data.map((c, i) => ({ ...c, id: c._id, priority: c.priority || (i === 0 ? 1 : i <= 2 ? 2 : 3) })))
+    careerPathsApi.getSuggestedCourses(form.route).then(data => {
+      setSuggestedCourses((data || []).sort((a, b) => (a.priority || 2) - (b.priority || 2)))
     }).catch(console.error)
   }, [form.route])
 
@@ -95,21 +119,28 @@ export default function CareerPlanWizard({ onComplete, onCancel, initialData }) 
 
   const handleRouteChange = async (val) => {
     set('route', val)
+    set('skills', [])
+    set('softSkills', [])
+    set('selectedCourses', [])
     if (!val) {
       setPredefinedSkills([])
+      setPredefinedSoftSkills([])
       set('objectives', [])
       return
     }
     try {
-      const [skills, objectives] = await Promise.all([
+      const [skills, softSkills, objectives] = await Promise.all([
         careerPathsApi.getSkills(val),
+        careerPathsApi.getSoftSkills(val),
         careerPathsApi.getObjectives(val),
       ])
       setPredefinedSkills(skills || [])
+      setPredefinedSoftSkills(softSkills || [])
       set('objectives', (objectives || []).map(o => ({ ...o, id: o._id || (o.text + Date.now()) })))
     } catch (err) {
       console.error(err)
       setPredefinedSkills([])
+      setPredefinedSoftSkills([])
       set('objectives', [])
     }
   }
@@ -276,7 +307,7 @@ export default function CareerPlanWizard({ onComplete, onCancel, initialData }) 
           {step === 2 && (() => {
             // Combine predefined + any existing plan skills (no duplicates)
             const allHardSkills = [...new Set([...predefinedSkills, ...form.skills])]
-            const allSoftSkills = [...new Set([...SOFT_SKILLS, ...form.softSkills])]
+            const allSoftSkills = [...new Set([...predefinedSoftSkills, ...form.softSkills])]
             return (
             <div className="flex flex-col gap-6">
               <div>
@@ -440,8 +471,8 @@ export default function CareerPlanWizard({ onComplete, onCancel, initialData }) 
             <div className="flex flex-col gap-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-[10px] font-semibold text-n-600 uppercase tracking-widest">Cursos disponibles en Humand</p>
-                  <p className="text-[11px] text-n-500 mt-0.5">Ordenados por prioridad según tu ruta</p>
+                  <p className="text-[10px] font-semibold text-n-600 uppercase tracking-widest">Cursos sugeridos para esta ruta</p>
+                  <p className="text-[11px] text-n-500 mt-0.5">Seleccioná los cursos que querés incluir en tu plan</p>
                 </div>
                 <span className="text-[11px] text-n-500">{form.selectedCourses.length} seleccionados</span>
               </div>
@@ -455,20 +486,21 @@ export default function CareerPlanWizard({ onComplete, onCancel, initialData }) 
               </div>
 
               <div className="flex flex-col gap-2.5">
-                {suggestedCourses.map(course => {
-                  const sel   = form.selectedCourses.includes(course.id)
-                  const pcfg  = PRIORITY_CONFIG[course.priority] || PRIORITY_CONFIG[3]
+                {suggestedCourses.map((course, i) => {
+                  const sel = form.selectedCourses.includes(course.name)
+                  const pcfg = PRIORITY_CONFIG[course.priority] || PRIORITY_CONFIG[2]
+                  const tCfg = { 'Certificación': 'bg-p-100 text-p-800', 'Workshop': 'bg-y-100 text-y-700', 'Curso': 'bg-t-100 text-t-800' }
                   return (
                     <button
-                      key={course.id}
-                      onClick={() => toggleCourse(course.id)}
+                      key={i}
+                      onClick={() => toggleCourse(course.name)}
                       className={`flex items-center gap-3 p-3.5 rounded-xl border-2 text-left transition-all ${sel ? 'border-h-500 bg-h-50' : 'border-n-200 hover:border-n-300 bg-white'}`}
                     >
                       <div className="w-10 h-10 rounded-xl bg-white shadow-4dp flex items-center justify-center shrink-0"><CourseIcon type={course.type} /></div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-[10px] font-semibold text-n-500 uppercase tracking-widest">{course.type}</p>
-                        <p className="text-[13px] font-semibold text-n-950 mt-0.5">{course.title}</p>
-                        <p className="text-[11px] text-n-600 mt-0.5">{course.provider} · {course.duration}</p>
+                        <p className="text-[10px] font-semibold text-n-500 uppercase tracking-widest">{course.type || 'Curso'}</p>
+                        <p className="text-[13px] font-semibold text-n-950 mt-0.5">{course.name}</p>
+                        <p className="text-[11px] text-n-600 mt-0.5">{course.provider || ''}{course.duration ? ` · ${course.duration}` : ''}</p>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
                         <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${pcfg.badge}`}>{pcfg.label}</span>
@@ -480,6 +512,10 @@ export default function CareerPlanWizard({ onComplete, onCancel, initialData }) 
                   )
                 })}
               </div>
+
+              {suggestedCourses.length === 0 && (
+                <p className="text-[12px] text-n-500 text-center py-4">No hay cursos sugeridos para esta ruta. El admin puede agregarlos desde la sección de Roles.</p>
+              )}
             </div>
           )}
 

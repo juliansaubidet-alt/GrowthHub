@@ -3,7 +3,7 @@ import { Check, Target, Map, TrendingUp, BarChart3, Rocket, Sparkles, Clock } fr
 import { ProgressRing, PathNode, CourseIcon } from './shared'
 import { TERM_CONFIG, PRIORITY_CONFIG } from './constants'
 import { careerPlansApi } from '../../api/careerPlans'
-import { coursesApi } from '../../api/courses'
+import { careerPathsApi } from '../../api/careerPaths'
 import { useApp } from '../../App'
 import CareerPlanWizard from './CareerPlanWizard'
 
@@ -12,10 +12,11 @@ function EmployeeEmptyState({ onStart, user }) {
     <div className="flex gap-5">
       <div className="flex flex-col gap-4" style={{ width: 260 }}>
         <div className="rounded-2xl p-5 text-white" style={{ background: 'linear-gradient(140deg, #3851d8 0%, #29317f 100%)' }}>
-          <p className="text-[9px] font-semibold uppercase tracking-widest opacity-65 mb-2">Current Role</p>
-          <p className="text-lg font-bold mb-0.5">{user?.industry || user?.department || 'Colaborador'}</p>
+          <p className="text-[9px] font-semibold uppercase tracking-widest opacity-65 mb-2">Rol Actual</p>
+          <p className="text-lg font-bold mb-0.5">{user?.currentRole || user?.industry || 'Colaborador'}</p>
           <p className="text-[12px] opacity-75 mb-3">{user?.department || ''} Team</p>
           <div className="flex gap-2">
+            {user?.level && <span className="text-[10px] font-semibold bg-white bg-opacity-20 px-2.5 py-1 rounded-full">{user.level}</span>}
             <span className="text-[10px] font-semibold bg-white bg-opacity-20 px-2.5 py-1 rounded-full">{user?.experience || ''}</span>
           </div>
         </div>
@@ -57,7 +58,7 @@ function EmployeeEmptyState({ onStart, user }) {
           <div className="flex items-center gap-2 bg-n-50 border border-n-200 rounded-full px-4 py-2 mb-8">
             <div className="w-2.5 h-2.5 rounded-full bg-h-500 shrink-0" />
             <span className="text-[12px] font-semibold text-n-950">Rol actual:</span>
-            <span className="text-[12px] text-n-700">{user?.industry || user?.department || 'Colaborador'}</span>
+            <span className="text-[12px] text-n-700">{user?.currentRole || user?.industry || 'Colaborador'}{user?.level ? ` · ${user.level}` : ''}</span>
           </div>
 
           <button
@@ -120,6 +121,7 @@ export default function EmployeeTab() {
   const [editObjInput, setEditObjInput] = useState('')
   const [editObjTerm, setEditObjTerm] = useState('short')
   const [showEditWizard, setShowEditWizard] = useState(false)
+  const [newFeedback, setNewFeedback] = useState(null)
 
   useEffect(() => {
     // Reset state for new user
@@ -150,17 +152,36 @@ export default function EmployeeTab() {
             })
             setCourseProgress(progress)
           }
-          // Fetch courses for display
+          // Build courses display from plan data + career path suggested courses
           if (plan.route) {
-            coursesApi.getByRoute(plan.route).then(courses => {
+            careerPathsApi.getSuggestedCourses(plan.route).then(suggestedCourses => {
               const selected = plan.selectedCourses || []
-              const display = courses.filter(c => selected.find(s => s.courseId === c._id))
-                .map(c => {
-                  const sel = selected.find(s => s.courseId === c._id)
-                  return { ...c, id: c._id, priority: c.priority }
-                })
+              const display = selected.map(sc => {
+                const courseName = sc.courseId || sc
+                // Find full course info from career path
+                const info = (suggestedCourses || []).find(c => c.name === courseName) || {}
+                return {
+                  id: courseName,
+                  name: courseName,
+                  title: info.name || courseName,
+                  type: info.type || 'Curso',
+                  provider: info.provider || '',
+                  duration: info.duration || '',
+                  priority: info.priority || 2,
+                }
+              })
               setCoursesDisplay(display)
             }).catch(console.error)
+          }
+          // Check for new manager feedback (compare with lastSeenFeedbackAt from backend)
+          const history = plan.feedbackHistory || []
+          const lastManagerMsg = [...history].reverse().find(fb => fb.role === 'manager')
+          if (lastManagerMsg) {
+            const seenAt = plan.lastSeenFeedbackAt ? new Date(plan.lastSeenFeedbackAt) : null
+            const msgAt = lastManagerMsg.createdAt ? new Date(lastManagerMsg.createdAt) : null
+            if (!seenAt || (msgAt && msgAt > seenAt)) {
+              setNewFeedback(lastManagerMsg)
+            }
           }
         }
         setLoading(false)
@@ -276,8 +297,8 @@ export default function EmployeeTab() {
       <div className="flex flex-col gap-4" style={{ width: 260 }}>
         <div className="rounded-2xl p-5 text-white" style={{ background: 'linear-gradient(140deg, #3851d8 0%, #29317f 100%)' }}>
           <p className="text-[9px] font-semibold uppercase tracking-widest opacity-65 mb-2">Rol Actual</p>
-          <p className="text-lg font-bold mb-0.5">{selectedUser?.industry || selectedUser?.department || 'Colaborador'}</p>
-          <p className="text-[12px] opacity-75 mb-1">{selectedUser?.department || ''} Team</p>
+          <p className="text-lg font-bold mb-0.5">{selectedUser?.currentRole || selectedUser?.industry || 'Colaborador'}</p>
+          <p className="text-[12px] opacity-75 mb-1">{selectedUser?.department || ''} Team · {selectedUser?.level || ''}</p>
           {managerName && (
             <p className="text-[11px] opacity-60 mb-2">Manager: {managerName}</p>
           )}
@@ -337,6 +358,26 @@ export default function EmployeeTab() {
 
       {/* RIGHT */}
       <div className="flex-1 flex flex-col gap-4 min-w-0">
+        {newFeedback && (
+          <div className="rounded-xl bg-h-50 border border-h-200 px-4 py-3 flex items-start gap-3 animate-fade-in">
+            <div className="w-7 h-7 rounded-full bg-t-100 flex items-center justify-center text-[10px] font-bold text-t-700 shrink-0 mt-0.5">
+              {newFeedback.from?.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() || '??'}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[12px] font-semibold text-n-950">Nuevo mensaje de {newFeedback.from}</p>
+              <p className="text-[12px] text-n-700 mt-0.5 leading-relaxed">"{newFeedback.message}"</p>
+              <p className="text-[10px] text-n-400 mt-1">{newFeedback.createdAt ? new Date(newFeedback.createdAt).toLocaleDateString('es-AR', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''}</p>
+            </div>
+            <button
+              onClick={async () => {
+                setNewFeedback(null)
+                await careerPlansApi.markFeedbackSeen(planData._id).catch(console.error)
+              }}
+              className="text-n-400 hover:text-n-700 shrink-0 mt-0.5"
+            >✕</button>
+          </div>
+        )}
+
         {planStatus === 'revision' && (
           <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-y-50 border border-y-200">
             <Clock size={16} className="text-y-600 shrink-0" />
@@ -354,33 +395,6 @@ export default function EmployeeTab() {
                 <p className="text-[12px] text-n-700 bg-white border border-r-100 rounded-lg px-3 py-2 italic">"{planData.managerFeedback}"</p>
               )}
             </div>
-
-            {planData.feedbackHistory?.length > 0 && (
-              <div className="bg-white rounded-2xl shadow-4dp">
-                <div className="px-5 py-3.5 border-b border-n-100">
-                  <p className="text-[13px] font-semibold text-n-950">Historial de comunicación</p>
-                </div>
-                <div className="p-4 flex flex-col gap-2">
-                  {planData.feedbackHistory.map((fb, i) => (
-                    <div key={i} className={`flex gap-3 p-3 rounded-xl ${fb.role === 'manager' ? 'bg-y-50 border border-y-100' : 'bg-h-50 border border-h-100'}`}>
-                      <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${fb.role === 'manager' ? 'bg-t-100 text-t-700' : 'bg-h-100 text-h-700'}`}>
-                        {fb.from?.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() || '??'}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-0.5">
-                          <p className="text-[12px] font-semibold text-n-950">{fb.from}</p>
-                          <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full ${fb.role === 'manager' ? 'bg-t-100 text-t-700' : 'bg-h-100 text-h-700'}`}>
-                            {fb.role === 'manager' ? 'Manager' : 'Colaborador'}
-                          </span>
-                          <span className="text-[10px] text-n-400">{fb.createdAt ? new Date(fb.createdAt).toLocaleDateString('es-AR', { day: 'numeric', month: 'short', year: 'numeric' }) : ''}</span>
-                        </div>
-                        <p className="text-[12px] text-n-700 leading-relaxed">{fb.message}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
 
             <button
               onClick={() => setShowEditWizard(true)}
@@ -421,6 +435,22 @@ export default function EmployeeTab() {
                     if (updated) {
                       setPlanData(updated)
                       setPlanStatus('revision')
+                      setCompletedObj(new Set(updated.objectives.filter(o => o.completed).map(o => o._id)))
+                      // Refresh courses display
+                      if (updated.route) {
+                        const suggestedCourses = await careerPathsApi.getSuggestedCourses(updated.route).catch(() => [])
+                        const selected = updated.selectedCourses || []
+                        setCoursesDisplay(selected.map(sc => {
+                          const courseName = sc.courseId || sc
+                          const info = (suggestedCourses || []).find(c => c.name === courseName) || {}
+                          return { id: courseName, name: courseName, title: info.name || courseName, type: info.type || 'Curso', provider: info.provider || '', duration: info.duration || '', priority: info.priority || 2 }
+                        }))
+                      }
+                      if (updated.selectedCourses) {
+                        const progress = {}
+                        updated.selectedCourses.forEach(sc => { if (sc.courseId && sc.status) progress[sc.courseId] = sc.status })
+                        setCourseProgress(progress)
+                      }
                     }
                     setShowEditWizard(false)
                   } catch (err) {
@@ -512,19 +542,15 @@ export default function EmployeeTab() {
                     <div key={c.id} className="flex items-center gap-3 p-3 rounded-xl bg-n-50 hover:bg-h-50 transition-colors cursor-pointer">
                       <div className="w-10 h-10 rounded-xl bg-white shadow-4dp flex items-center justify-center shrink-0"><CourseIcon type={c.type} /></div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-[10px] font-semibold text-n-500 uppercase tracking-widest">{c.type}</p>
-                        <p className="text-[13px] font-semibold text-n-950 mt-0.5">{c.title}</p>
-                        <p className="text-[11px] text-n-600">{c.provider} · {c.duration}</p>
+                        <p className="text-[10px] font-semibold text-n-500 uppercase tracking-widest">{c.type || 'Curso'}</p>
+                        <p className="text-[13px] font-semibold text-n-950 mt-0.5">{c.title || c.name}</p>
+                        <p className="text-[11px] text-n-600">{c.provider}{c.duration ? ` · ${c.duration}` : ''}</p>
                       </div>
                       <div className="flex items-center gap-1.5 shrink-0">
                         <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${pcfg.badge}`}>{pcfg.label}</span>
-                        <button
-                          disabled={planStatus !== 'aprobado'}
-                          onClick={(e) => { e.stopPropagation(); cycleCourse(c.id) }}
-                          className={`text-[10px] font-semibold px-2 py-0.5 rounded-full transition-colors ${planStatus !== 'aprobado' ? 'opacity-60 cursor-not-allowed' : ''} ${COURSE_STATE_CFG[courseProgress[c.id] || 'pendiente'].cls}`}
-                        >
+                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${COURSE_STATE_CFG[courseProgress[c.id] || 'pendiente'].cls}`}>
                           {COURSE_STATE_CFG[courseProgress[c.id] || 'pendiente'].label}
-                        </button>
+                        </span>
                       </div>
                     </div>
                   )
@@ -533,6 +559,33 @@ export default function EmployeeTab() {
             }
           </div>
         </div>
+
+        {planData.feedbackHistory?.length > 0 && (
+          <div className="bg-white rounded-2xl shadow-4dp">
+            <div className="px-5 py-3.5 border-b border-n-100">
+              <p className="text-[13px] font-semibold text-n-950">Historial de comunicación</p>
+            </div>
+            <div className="p-4 flex flex-col gap-2">
+              {planData.feedbackHistory.map((fb, i) => (
+                <div key={i} className={`flex gap-3 p-3 rounded-xl ${fb.role === 'manager' ? 'bg-y-50 border border-y-100' : 'bg-h-50 border border-h-100'}`}>
+                  <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${fb.role === 'manager' ? 'bg-t-100 text-t-700' : 'bg-h-100 text-h-700'}`}>
+                    {fb.from?.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() || '??'}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <p className="text-[12px] font-semibold text-n-950">{fb.from}</p>
+                      <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full ${fb.role === 'manager' ? 'bg-t-100 text-t-700' : 'bg-h-100 text-h-700'}`}>
+                        {fb.role === 'manager' ? 'Manager' : 'Colaborador'}
+                      </span>
+                      <span className="text-[10px] text-n-400">{fb.createdAt ? new Date(fb.createdAt).toLocaleDateString('es-AR', { day: 'numeric', month: 'short', year: 'numeric' }) : ''}</span>
+                    </div>
+                    <p className="text-[12px] text-n-700 leading-relaxed">{fb.message}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
